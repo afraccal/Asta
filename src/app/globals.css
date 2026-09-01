@@ -1,26 +1,96 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ===========================================================================
+   ASTA FANTACALCIO — Design tokens
+   Direzione: "draft room notturna". Fondo profondo, palco illuminato,
+   tavoli in vetro smerigliato. Leggibile da 3 metri su una TV.
+   =========================================================================== */
+
+@theme {
+  /* Superfici */
+  --color-pitch-950: #070A11;
+  --color-pitch-900: #0B0F1A;
+  --color-pitch-850: #111726;
+  --color-pitch-800: #161E30;
+  --color-pitch-700: #1E2840;
+  --color-pitch-600: #2A3654;
+
+  /* Testo */
+  --color-chalk-50:  #F2F5FA;
+  --color-chalk-200: #C6CFDF;
+  --color-chalk-400: #8695B0;
+  --color-chalk-600: #5A6880;
+
+  /* Semantici */
+  --color-gold-400:   #FFC94D;   /* squadra in testa all'offerta */
+  --color-gold-600:   #C98A0E;
+  --color-turn-400:   #3DDC97;   /* squadra di turno */
+  --color-turn-600:   #12996A;
+  --color-alarm-400:  #FF5A63;   /* timer agli sgoccioli */
+  --color-alarm-600:  #C8323B;
+  --color-brand-400:  #6E93FF;
+  --color-brand-500:  #4F76F5;
+  --color-brand-600:  #3B5CD0;
+
+  /* Ruoli */
+  --color-role-p: #FFC94D;
+  --color-role-d: #3DDC97;
+  --color-role-c: #6E93FF;
+  --color-role-a: #FF7A6B;
+
+  --font-sans:    var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-display), "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: 1rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-tap-highlight-color: transparent;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background:
+      radial-gradient(120% 80% at 50% -10%, #17223B 0%, transparent 60%),
+      var(--color-pitch-950);
+    color: var(--color-chalk-50);
+    font-family: var(--font-sans);
+    /* L'asta si guarda, non si scorre: niente rimbalzo elastico su iOS. */
+    overscroll-behavior: none;
+  }
+
+  /* I numeri devono restare incolonnati mentre il timer scorre,
+     altrimenti "10 → 9" fa saltare il layout. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .surface {
+    background: color-mix(in oklab, var(--color-pitch-850) 88%, transparent);
+    border: 1px solid var(--color-pitch-700);
+    border-radius: var(--radius-card);
+    backdrop-filter: blur(12px);
+  }
+
+  .display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+}
+
+/* Rispetta chi ha chiesto meno animazioni a livello di sistema. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
