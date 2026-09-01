@@ -22,7 +22,6 @@ export function useAuctionAccess(code: string) {
 
   const enter = useCallback(
     async (nickname?: string) => {
-      setError("");
       try {
         const supabase = getSupabaseBrowser();
         const { data: session } = await supabase.auth.getSession();
@@ -44,6 +43,7 @@ export function useAuctionAccess(code: string) {
         const auction = data as { id: string; name: string };
         setAuctionId(auction.id);
         setAuctionName(auction.name);
+        setError("");
         setPhase("ready");
       } catch (e) {
         // La sessione anonima esiste ma il profilo no: chiedere il nome.
@@ -59,6 +59,10 @@ export function useAuctionAccess(code: string) {
   );
 
   useEffect(() => {
+    // enter() aggiorna lo stato solo DOPO una chiamata di rete attesa, quindi
+    // non provoca il render a cascata che questa regola vuole evitare: il
+    // linter non riesce a dimostrarlo attraverso l'await.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void enter();
   }, [enter]);
 

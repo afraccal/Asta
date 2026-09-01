@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 
 const NICKNAME_KEY = "asta.nickname";
@@ -93,6 +93,25 @@ export function useIdentity(): Identity {
   return identity;
 }
 
-export function useEnsureIdentity() {
-  return useCallback(ensureIdentity, []);
+/**
+ * Nickname memorizzato nel browser.
+ *
+ * localStorage e' uno stato esterno a React: si legge con
+ * useSyncExternalStore invece che con un effetto. Cosi' non c'e' disallineamento
+ * fra render sul server (dove localStorage non esiste) e idratazione, e il nome
+ * resta allineato anche fra piu' schede aperte.
+ */
+const NICKNAME_SERVER_SNAPSHOT = "";
+
+function subscribeToNickname(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  return () => window.removeEventListener("storage", onChange);
+}
+
+export function useStoredNickname(): string {
+  return useSyncExternalStore(
+    subscribeToNickname,
+    readStoredNickname,
+    () => NICKNAME_SERVER_SNAPSHOT,
+  );
 }

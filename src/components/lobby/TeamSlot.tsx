@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -28,10 +28,10 @@ export function TeamSlot({
   onLeave,
   onRename,
 }: Props) {
+  // La bozza esiste solo durante la modifica: si inizializza al click, cosi'
+  // non serve tenerla sincronizzata con il nome che arriva dal server.
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(team.name);
-
-  useEffect(() => setDraft(team.name), [team.name]);
+  const [draft, setDraft] = useState("");
 
   const full = team.members.length >= 2;
 
@@ -75,7 +75,10 @@ export function TeamSlot({
             <button
               type="button"
               disabled={!canRename}
-              onClick={() => setEditing(true)}
+              onClick={() => {
+                setDraft(team.name);
+                setEditing(true);
+              }}
               className={cn(
                 "display block max-w-full truncate text-left text-xl leading-tight text-chalk-50",
                 canRename ? "hover:text-gold-400" : "cursor-default",

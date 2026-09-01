@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { NicknameGate } from "@/components/NicknameGate";
@@ -14,6 +15,7 @@ import { friendlyError } from "@/lib/errors";
 export default function LobbyPage({ params }: PageProps<"/a/[code]/lobby">) {
   const { code } = use(params);
   const upperCode = code.toUpperCase();
+  const router = useRouter();
 
   const access = useAuctionAccess(upperCode);
   const { state, connection, refresh } = useAuctionState(access.auctionId);
@@ -36,7 +38,7 @@ export default function LobbyPage({ params }: PageProps<"/a/[code]/lobby">) {
       <main className="flex flex-1 items-center justify-center px-5">
         <div className="w-full max-w-sm space-y-4 text-center">
           <Alert>{access.error}</Alert>
-          <Button variant="ghost" onClick={() => (window.location.href = "/")}>
+          <Button variant="ghost" onClick={() => router.push("/")}>
             Torna alla home
           </Button>
         </div>

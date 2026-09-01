@@ -20,15 +20,9 @@ export function useCountdown(
   const lastRef = useRef(-1);
 
   useEffect(() => {
-    // Asta in pausa: il tempo residuo e' congelato, non scorre.
-    if (frozenMs != null) {
-      setRemaining(frozenMs);
-      return;
-    }
-    if (!deadlineMs) {
-      setRemaining(0);
-      return;
-    }
+    // Asta in pausa o nessun lotto: niente da animare. Il valore mostrato
+    // viene derivato sotto, senza passare dallo stato.
+    if (frozenMs != null || !deadlineMs) return;
 
     let frame = 0;
     const tick = () => {
@@ -44,5 +38,6 @@ export function useCountdown(
     return () => cancelAnimationFrame(frame);
   }, [deadlineMs, clock, frozenMs]);
 
-  return remaining;
+  if (frozenMs != null) return frozenMs;
+  return deadlineMs ? remaining : 0;
 }

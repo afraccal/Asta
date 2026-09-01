@@ -1,22 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input, Field } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
-import { ensureIdentity, readStoredNickname } from "@/lib/identity";
+import { ensureIdentity, useStoredNickname } from "@/lib/identity";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { friendlyError } from "@/lib/errors";
 
 export default function HomePage() {
   const router = useRouter();
-  const [nickname, setNickname] = useState("");
+  // Il nome salvato fa da valore iniziale finche' l'utente non scrive.
+  const storedNickname = useStoredNickname();
+  const [draftNickname, setDraftNickname] = useState<string | null>(null);
+  const nickname = draftNickname ?? storedNickname;
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState<null | "join" | "create">(null);
   const [error, setError] = useState("");
-
-  useEffect(() => setNickname(readStoredNickname()), []);
 
   async function handleJoin() {
     setError("");
@@ -71,7 +72,7 @@ export default function HomePage() {
           <Field label="Il tuo nome" hint="Come ti vedranno gli altri al tavolo.">
             <Input
               value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
+              onChange={(e) => setDraftNickname(e.target.value)}
               placeholder="Alessandro"
               maxLength={32}
               autoComplete="nickname"

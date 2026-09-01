@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input, Field } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
-import { readStoredNickname } from "@/lib/identity";
+import { useStoredNickname } from "@/lib/identity";
 
 /** Schermata mostrata a chi apre il link di invito senza essere passato dalla home. */
 export function NicknameGate({
@@ -16,10 +16,10 @@ export function NicknameGate({
   onSubmit: (nickname: string) => Promise<void> | void;
   error?: string;
 }) {
-  const [nickname, setNickname] = useState("");
+  const storedNickname = useStoredNickname();
+  const [draftNickname, setDraftNickname] = useState<string | null>(null);
+  const nickname = draftNickname ?? storedNickname;
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => setNickname(readStoredNickname()), []);
 
   async function submit() {
     setBusy(true);
@@ -41,7 +41,7 @@ export function NicknameGate({
           <Field label="Il tuo nome">
             <Input
               value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
+              onChange={(e) => setDraftNickname(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && nickname.trim().length >= 2) void submit();
               }}

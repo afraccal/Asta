@@ -84,11 +84,6 @@ export function useAuctionState(auctionId: string | null): UseAuctionStateResult
     };
   }, [auctionId]);
 
-  // --- Snapshot iniziale --------------------------------------------------------
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
   // --- Canale realtime ----------------------------------------------------------
   useEffect(() => {
     if (!auctionId) return;
@@ -147,11 +142,15 @@ export function useAuctionState(auctionId: string | null): UseAuctionStateResult
 
     channel.subscribe((status: string) => {
       if (disposed) return;
+      // Il primo snapshot parte da qui, non da un effetto separato: cosi'
+      // si carica una volta sola e si copre anche il caso in cui il
+      // websocket sia bloccato dalla rete, dove i dati servono comunque.
       if (status === "SUBSCRIBED") {
         setConnection("live");
         void refresh();
       } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         setConnection("offline");
+        void refresh();
       } else if (status === "CLOSED") {
         setConnection("connecting");
       }
