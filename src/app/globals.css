@@ -79,7 +79,7 @@
 
   body {
     background:
-      radial-gradient(120% 80% at 50% -10%, #17223B 0%, transparent 60%),
+      radial-gradient(120% 80% at 50% -10%, var(--page-glow) 0%, transparent 60%),
       var(--color-pitch-950);
     color: var(--color-chalk-50);
     font-family: var(--font-sans);
@@ -96,7 +96,7 @@
 
 @layer components {
   .surface {
-    background: color-mix(in oklab, var(--color-pitch-850) 88%, transparent);
+    background: color-mix(in oklab, var(--color-pitch-850) 92%, transparent);
     border: 1px solid var(--color-pitch-700);
     border-radius: var(--radius-card);
     backdrop-filter: blur(12px);
@@ -184,8 +184,8 @@
     z-index: 0;
     pointer-events: none;
     background:
-      radial-gradient(58% 46% at 50% 34%, #22304F 0%, transparent 64%),
-      radial-gradient(90% 70% at 50% 120%, #0D1526 0%, transparent 70%);
+      radial-gradient(58% 46% at 50% 34%, var(--room-glow) 0%, transparent 64%),
+      radial-gradient(90% 70% at 50% 120%, var(--room-floor) 0%, transparent 70%);
   }
 
   /* I bordi si spengono: l'occhio finisce al centro senza doverci pensare. */
@@ -194,7 +194,7 @@
     inset: 0;
     z-index: 30;
     pointer-events: none;
-    background: radial-gradient(115% 95% at 50% 45%, transparent 52%, #04060C 100%);
+    background: radial-gradient(115% 95% at 50% 45%, transparent 52%, var(--room-vignette) 100%);
   }
 
   /* Grana pellicola: toglie la piattezza del gradiente puro.
@@ -205,27 +205,27 @@
     inset: 0;
     z-index: 31;
     pointer-events: none;
-    opacity: 0.05;
+    opacity: var(--grain-opacity);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
   /* Il tavolo: panno verde scurissimo con una luce che cade da sopra. */
   .felt {
     background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.045) 0%, transparent 38%),
-      linear-gradient(168deg, #14202B 0%, #0E1720 100%);
+      linear-gradient(180deg, var(--felt-sheen) 0%, transparent 38%),
+      linear-gradient(168deg, var(--felt-top) 0%, var(--felt-bottom) 100%);
     border: 1px solid var(--color-pitch-700);
     border-radius: var(--radius-card);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.06),
-      0 14px 40px -18px #000;
+      inset 0 1px 0 var(--felt-sheen),
+      var(--felt-shadow);
   }
 
   /* Targhetta col nome della squadra, come su un tavolo vero. */
   .nameplate {
-    background: linear-gradient(180deg, #1E2B3A 0%, #16212D 100%);
-    border-bottom: 1px solid rgb(255 255 255 / 0.07);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+    background: linear-gradient(180deg, var(--plate-top) 0%, var(--plate-bottom) 100%);
+    border-bottom: 1px solid var(--plate-edge);
+    box-shadow: inset 0 1px 0 var(--felt-sheen);
   }
 
   /* Stati del tavolo. Sono tre soli e vogliono dire tre cose precise:
@@ -250,7 +250,7 @@
   /* Il palco: il giocatore in asta sta dentro un cono di luce. */
   .spotlight {
     background:
-      radial-gradient(72% 58% at 50% 22%, rgb(255 255 255 / 0.05) 0%, transparent 68%);
+      radial-gradient(72% 58% at 50% 22%, var(--stage-glow) 0%, transparent 68%);
   }
 }
 
@@ -388,4 +388,119 @@
 
 @layer components {
   .anim-drawer { animation: drawer-in 260ms cubic-bezier(0.16, 1, 0.3, 1); }
+}
+
+/* ===========================================================================
+   TEMI
+   Il tema predefinito e' "tenue": i neri assoluti su uno schermo grande, per
+   una serata intera, stancano. "Notte" resta per chi collega alla TV in una
+   stanza al buio, "chiaro" per chi gioca di giorno.
+   Sono selettori piu' specifici di :root, quindi vincono sui valori di base.
+   =========================================================================== */
+
+:root,
+html[data-tema="tenue"] {
+  --color-pitch-950: #141A24;
+  --color-pitch-900: #1A212D;
+  --color-pitch-850: #202836;
+  --color-pitch-800: #27303F;
+  --color-pitch-700: #333E51;
+  --color-pitch-600: #414D62;
+
+  --color-chalk-50:  #E9EEF6;
+  --color-chalk-200: #C1CBDA;
+  --color-chalk-400: #8B98AC;
+  --color-chalk-600: #67748A;
+
+  --page-glow:      #1D2739;
+  --room-glow:      #243149;
+  --room-floor:     #151E2C;
+  --room-vignette:  #0C1119;
+  --stage-glow:     rgb(255 255 255 / 0.05);
+  --felt-top:       #1B2733;
+  --felt-bottom:    #151F2A;
+  --felt-sheen:     rgb(255 255 255 / 0.05);
+  --felt-shadow:    0 14px 40px -18px rgb(0 0 0 / 0.75);
+  --plate-top:      #26333F;
+  --plate-bottom:   #1C2733;
+  --plate-edge:     rgb(255 255 255 / 0.07);
+  --grain-opacity:  0.04;
+}
+
+html[data-tema="notte"] {
+  --color-pitch-950: #070A11;
+  --color-pitch-900: #0B0F1A;
+  --color-pitch-850: #111726;
+  --color-pitch-800: #161E30;
+  --color-pitch-700: #1E2840;
+  --color-pitch-600: #2A3654;
+
+  --color-chalk-50:  #F2F5FA;
+  --color-chalk-200: #C6CFDF;
+  --color-chalk-400: #8695B0;
+  --color-chalk-600: #5A6880;
+
+  --page-glow:      #17223B;
+  --room-glow:      #22304F;
+  --room-floor:     #0D1526;
+  --room-vignette:  #04060C;
+  --stage-glow:     rgb(255 255 255 / 0.05);
+  --felt-top:       #14202B;
+  --felt-bottom:    #0E1720;
+  --felt-sheen:     rgb(255 255 255 / 0.045);
+  --felt-shadow:    0 14px 40px -18px #000;
+  --plate-top:      #1E2B3A;
+  --plate-bottom:   #16212D;
+  --plate-edge:     rgb(255 255 255 / 0.07);
+  --grain-opacity:  0.05;
+}
+
+html[data-tema="chiaro"] {
+  color-scheme: light;
+
+  /* I token mantengono il loro ruolo (pitch = superfici, chalk = testo):
+     si invertono i valori, non il significato, cosi' nessun componente
+     va riscritto. */
+  --color-pitch-950: #EFF2F7;
+  --color-pitch-900: #FFFFFF;
+  --color-pitch-850: #FFFFFF;
+  --color-pitch-800: #E4E9F1;
+  --color-pitch-700: #D2DAE6;
+  --color-pitch-600: #B8C3D4;
+
+  --color-chalk-50:  #141A24;
+  --color-chalk-200: #2F3B4D;
+  --color-chalk-400: #5C6A80;
+  --color-chalk-600: #5F6C82;
+
+  /* Su fondo chiaro i colori accesi non si leggono: vanno scuriti,
+     non solo spostati. */
+  --color-gold-400:  #7E5400;
+  --color-gold-600:  #7A5400;
+  --color-turn-400:  #0B7F52;
+  --color-turn-600:  #085F3D;
+  --color-alarm-400: #C42630;
+  --color-alarm-600: #9B1C25;
+  --color-brand-400: #3355D8;
+  --color-brand-500: #2A46BE;
+  --color-brand-600: #22399B;
+
+  --color-role-p: #7E5400;
+  --color-role-d: #0B7F52;
+  --color-role-c: #3355D8;
+  --color-role-a: #C0392B;
+
+  --page-glow:      #DDE5F2;
+  --room-glow:      #E3EAF6;
+  --room-floor:     #E7ECF4;
+  --room-vignette:  rgb(150 165 190 / 0.28);
+  --stage-glow:     rgb(255 255 255 / 0.75);
+  --felt-top:       #FFFFFF;
+  --felt-bottom:    #F4F7FB;
+  --felt-sheen:     rgb(255 255 255 / 0.9);
+  --felt-shadow:    0 10px 30px -18px rgb(40 60 90 / 0.35);
+  --plate-top:      #F0F4FA;
+  --plate-bottom:   #E6ECF5;
+  --plate-edge:     rgb(30 50 80 / 0.10);
+  --grain-opacity:  0;
 }

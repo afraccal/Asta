@@ -39,10 +39,10 @@ export default function GiocatoriPage({ params }: PageProps<"/a/[code]/giocatori
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
       <div>
         <Link
-          href={`/a/${upperCode}/lobby`}
+          href={`/a/${upperCode}/room`}
           className="text-sm text-chalk-400 transition hover:text-chalk-50"
         >
-          ← Lobby
+          ← Torna all&apos;asta
         </Link>
         <h1 className="display mt-2 text-4xl text-chalk-50">
           {state.auction.player_list?.name ?? "Listone"}

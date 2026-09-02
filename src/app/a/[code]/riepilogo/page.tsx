@@ -2,7 +2,7 @@
 
 import { use, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, DownloadSimple } from "@phosphor-icons/react";
+import { ArrowLeft, DownloadSimple, House } from "@phosphor-icons/react";
 import { NicknameGate } from "@/components/NicknameGate";
 import { LoadingState } from "@/components/LoadingState";
 import { RoleBadge } from "@/components/player/PlayerPortrait";
@@ -68,10 +68,20 @@ export default function RiepilogoPage({ params }: PageProps<"/a/[code]/riepilogo
           </p>
         </div>
 
-        <Button variant="ghost" onClick={() => downloadRosterCsv(state)}>
-          <DownloadSimple size={16} weight="bold" />
-          Scarica CSV
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" onClick={() => downloadRosterCsv(state)}>
+            <DownloadSimple size={16} weight="bold" />
+            Scarica CSV
+          </Button>
+          {/* Il riepilogo era un vicolo cieco: si arrivava a fine asta e non
+              c'era modo di andare altrove se non col tasto del browser. */}
+          <Link href="/">
+            <Button variant="ghost">
+              <House size={16} weight="bold" />
+              Home
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">

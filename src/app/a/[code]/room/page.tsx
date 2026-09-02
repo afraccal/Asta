@@ -3,7 +3,9 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { TelevisionSimple, ArrowLeft, ClockCounterClockwise } from "@phosphor-icons/react";
+import {
+  TelevisionSimple, SignOut, ClockCounterClockwise, ListChecks,
+} from "@phosphor-icons/react";
 import { NicknameGate } from "@/components/NicknameGate";
 import { LoadingState } from "@/components/LoadingState";
 import { RoomStage } from "@/components/auction/RoomStage";
@@ -13,6 +15,7 @@ import { NominationPanel } from "@/components/auction/NominationPanel";
 import { AssignedOverlay } from "@/components/auction/AssignedOverlay";
 import { AdminBar, ConnectionBanner, StatusPill } from "@/components/auction/RoomChrome";
 import { SeatPicker } from "@/components/auction/SeatPicker";
+import { ThemeCycleButton } from "@/components/ui/ThemeSwitcher";
 import { HistoryPanel } from "@/components/auction/HistoryPanel";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -213,14 +216,30 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
             <TelevisionSimple size={18} weight="bold" />
           </button>
 
+          {!tvMode && <ThemeCycleButton />}
+
           {!tvMode && (
-            <Link
-              href={`/a/${upperCode}/lobby`}
-              title="Torna alla lobby"
-              className="flex size-8 items-center justify-center rounded-[var(--radius-inner)] bg-pitch-800 text-chalk-400 transition hover:text-chalk-50"
-            >
-              <ArrowLeft size={18} weight="bold" />
-            </Link>
+            <>
+              <Link
+                href={`/a/${upperCode}/riepilogo`}
+                title="Riepilogo e rose complete"
+                className="flex size-8 items-center justify-center rounded-[var(--radius-inner)] bg-pitch-800 text-chalk-400 transition hover:text-chalk-50"
+              >
+                <ListChecks size={18} weight="bold" />
+              </Link>
+
+              {/* Porta alla home e non alla lobby: a asta iniziata la lobby
+                  rimanda in sala, e il tasto indietro rimbalzava all'infinito.
+                  Uscire dalla schermata non fa perdere il posto al tavolo: si
+                  rientra con lo stesso link. */}
+              <Link
+                href="/"
+                title="Esci dalla sala (resti nella tua squadra)"
+                className="flex size-8 items-center justify-center rounded-[var(--radius-inner)] bg-pitch-800 text-chalk-400 transition hover:text-chalk-50"
+              >
+                <SignOut size={18} weight="bold" />
+              </Link>
+            </>
           )}
         </div>
       </header>

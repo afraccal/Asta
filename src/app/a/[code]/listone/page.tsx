@@ -138,8 +138,8 @@ export default function ListonePage({ params }: PageProps<"/a/[code]/listone">) 
       <main className="flex flex-1 items-center justify-center px-5">
         <div className="w-full max-w-sm space-y-4 text-center">
           <Alert>Solo l&apos;amministratore può gestire il listone.</Alert>
-          <Link href={`/a/${upperCode}/lobby`} className="text-sm text-chalk-400 hover:text-chalk-50">
-            Torna alla lobby
+          <Link href={`/a/${upperCode}/room`} className="text-sm text-chalk-400 hover:text-chalk-50">
+            Torna all&apos;asta
           </Link>
         </div>
       </main>
@@ -153,10 +153,10 @@ export default function ListonePage({ params }: PageProps<"/a/[code]/listone">) 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 py-8 sm:px-6">
       <Link
-        href={`/a/${upperCode}/lobby`}
+        href={`/a/${upperCode}/room`}
         className="inline-block text-sm text-chalk-400 transition hover:text-chalk-50"
       >
-        ← Lobby
+        ← Torna all&apos;asta
       </Link>
 
       <header className="space-y-2">

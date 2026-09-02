@@ -169,6 +169,21 @@ esistenti vengono aggiornati invece di duplicati, e i riferimenti delle aste in
 corso restano validi. Il formato completo e' documentato in-app su
 `/docs/formato-listone`.
 
+### I colori
+
+Tre temi, scelti dall'interfaccia e ricordati nel browser: **tenue** (il
+predefinito: scuro ma morbido, per starci ore), **notte** (nero pieno, per la
+TV in una stanza al buio) e **chiaro**, per giocare di giorno.
+
+I token mantengono il loro ruolo (`pitch-*` sono superfici, `chalk-*` e' testo)
+e cambiano solo di valore: nessun componente sa quale tema e' attivo. Nel tema
+chiaro i colori accesi vengono scuriti, non solo spostati, perche' l'oro e il
+verde che si leggono benissimo sul nero spariscono sul bianco; i contrasti
+sono stati misurati, non stimati a occhio.
+
+Il tema viene applicato da uno script nel `<head>` prima del disegno della
+pagina, altrimenti a ogni caricamento si vedrebbe un lampo del tema sbagliato.
+
 ### Foto dei giocatori
 
 `resolvePlayerImage()` interroga una catena di fornitori in ordine: URL

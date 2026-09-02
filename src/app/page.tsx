@@ -8,6 +8,7 @@ import { Alert } from "@/components/ui/Alert";
 import { ensureIdentity, useStoredNickname } from "@/lib/identity";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { friendlyError } from "@/lib/errors";
+import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 
 export default function HomePage() {
   const router = useRouter();
@@ -126,6 +127,10 @@ export default function HomePage() {
         >
           Crea una nuova asta
         </Button>
+
+        <div className="flex justify-center pt-2">
+          <ThemeSwitcher />
+        </div>
       </div>
     </main>
   );

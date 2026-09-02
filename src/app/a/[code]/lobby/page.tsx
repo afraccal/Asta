@@ -3,9 +3,11 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { NicknameGate } from "@/components/NicknameGate";
+import { ThemeCycleButton } from "@/components/ui/ThemeSwitcher";
 import { LoadingState } from "@/components/LoadingState";
 import { InviteBar } from "@/components/lobby/InviteBar";
 import { TeamSlot } from "@/components/lobby/TeamSlot";
@@ -82,9 +84,16 @@ export default function LobbyPage({ params }: PageProps<"/a/[code]/lobby">) {
     <main className="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 py-8 sm:px-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-chalk-400">Lobby</p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.3em] text-chalk-400 transition hover:text-chalk-50"
+          >
+            <ArrowLeft size={12} weight="bold" /> Esci
+          </Link>
           <h1 className="display text-4xl text-chalk-50 sm:text-5xl">{auction.name}</h1>
         </div>
+        <div className="flex items-center gap-3">
+        <ThemeCycleButton />
         <span
           className="flex items-center gap-2 text-xs text-chalk-400"
           title={connection === "live" ? "Sincronizzato" : "Riconnessione in corso"}
@@ -98,6 +107,7 @@ export default function LobbyPage({ params }: PageProps<"/a/[code]/lobby">) {
           />
           {connection === "live" ? "In diretta" : "Riconnessione…"}
         </span>
+        </div>
       </header>
 
       <InviteBar code={auction.code} />

@@ -3,16 +3,20 @@
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/Button";
+import {
+  bidFieldValue, effectiveBid, isBelowMinimum, sanitizeBidInput, type BidDraft,
+} from "@/lib/bidField";
 import type { Lot, Team } from "@/lib/types";
 
-const QUICK_STEPS = [1, 5, 10];
+const SCATTI_RAPIDI = [1, 5, 10];
 
 /**
  * Controlli di offerta (§6, §11).
  *
- * L'importo non è tenuto in stato: si deriva dall'offerta corrente. Se mentre
- * stai digitando qualcuno rilancia più alto, la tua cifra sale da sola al
- * nuovo minimo valido invece di restare un numero che il server rifiuterebbe.
+ * Regola del campo: mentre scrivi non ti tocca nessuno. Finché non hai
+ * scritto niente segue da solo il minimo valido, così un rilancio altrui non
+ * ti lascia con una cifra ormai inutile; appena scrivi, comanda quello che
+ * hai scritto. Il pulsante mostra sempre la cifra che partirà davvero.
  *
  * Il tetto è `max_bid`, calcolato dal server tenendo conto degli slot ancora
  * da riempire: qui serve solo a non far premere un pulsante destinato a
@@ -33,65 +37,83 @@ export function BidControls({
   busy: boolean;
   onBid: (amount: number) => void;
 }) {
-  const [typed, setTyped] = useState<number | null>(null);
+  const [draft, setDraft] = useState<BidDraft>(null);
 
   const minimum = lot.current_bid + minIncrement;
   const maxBid = myTeam?.max_bid ?? 0;
-  const amount = typed !== null && typed >= minimum ? Math.min(typed, maxBid) : minimum;
+  const valoreCampo = bidFieldValue(draft, minimum);
+  const importo = effectiveBid(draft, minimum, maxBid);
+  const rimastoIndietro = isBelowMinimum(draft, minimum);
 
   const leading = myTeam !== null && lot.current_bidder_team_id === myTeam.id;
   const affordable = minimum <= maxBid;
 
-  const blocked =
-    !myTeam
-      ? "Stai guardando l'asta: non hai una squadra."
-      : paused
-        ? "Asta in pausa."
-        : leading
-          ? "Sei tu in testa all'offerta."
-          : !affordable
-            ? `Non ti bastano i crediti: puoi arrivare a ${maxBid}.`
-            : null;
+  const blocked = !myTeam
+    ? "Stai guardando l'asta: non hai una squadra."
+    : paused
+      ? "Asta in pausa."
+      : leading
+        ? "Sei tu in testa all'offerta."
+        : !affordable
+          ? `Non ti bastano i crediti: puoi arrivare a ${maxBid}.`
+          : null;
 
   const canBid = blocked === null && !busy;
+
+  function offri(cifra: number) {
+    setDraft(null); // il campo torna a seguire il minimo
+    onBid(cifra);
+  }
 
   return (
     <div className="w-full max-w-md space-y-1.5">
       <div className="flex items-stretch gap-2">
         <button
           type="button"
-          aria-label="Diminuisci"
-          disabled={!canBid || amount <= minimum}
-          onClick={() => setTyped(Math.max(minimum, amount - 1))}
+          aria-label="Diminuisci di 1"
+          disabled={!canBid || importo <= minimum}
+          onClick={() => setDraft(String(Math.max(minimum, importo - 1)))}
           className="display h-12 w-12 shrink-0 rounded-[var(--radius-inner)] bg-pitch-800 text-2xl text-chalk-200 transition hover:bg-pitch-700 active:scale-95 disabled:opacity-40"
         >
           −
         </button>
 
-        <div className="relative flex-1">
-          <input
-            type="number"
-            inputMode="numeric"
-            value={amount}
-            min={minimum}
-            max={maxBid}
-            disabled={!canBid}
-            onChange={(e) => setTyped(Number(e.target.value))}
-            className={cn(
-              "display h-12 w-full rounded-[var(--radius-inner)] border border-pitch-600 bg-pitch-900",
-              "text-center text-3xl text-chalk-50 tabular",
-              "focus:border-gold-400 focus:outline-none focus:ring-2 focus:ring-gold-400/25",
-              "disabled:opacity-50 [appearance:textfield]",
-              "[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
-            )}
-          />
-        </div>
+        <input
+          // type="text" e non "number": la rotellina del mouse non cambia piu'
+          // la cifra per sbaglio, e su telefono compare comunque il tastierino.
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          aria-label="Importo dell'offerta"
+          value={valoreCampo}
+          disabled={!canBid}
+          onChange={(e) => setDraft(sanitizeBidInput(e.target.value))}
+          onFocus={(e) => e.target.select()}
+          onBlur={() => {
+            // Uscendo dal campo si torna a una cifra sensata invece di
+            // lasciare a schermo un numero che verrebbe rifiutato.
+            if (draft === "" || rimastoIndietro) setDraft(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && canBid) offri(importo);
+            if (e.key === "Escape") setDraft(null);
+          }}
+          className={cn(
+            "display h-12 w-full flex-1 rounded-[var(--radius-inner)] border bg-pitch-900",
+            "text-center text-3xl text-chalk-50 tabular",
+            "focus:outline-none focus:ring-2 focus:ring-gold-400/25",
+            "disabled:opacity-50",
+            rimastoIndietro
+              ? "border-alarm-400/70 text-alarm-400"
+              : "border-pitch-600 focus:border-gold-400",
+          )}
+        />
 
         <button
           type="button"
-          aria-label="Aumenta"
-          disabled={!canBid || amount >= maxBid}
-          onClick={() => setTyped(Math.min(maxBid, amount + 1))}
+          aria-label="Aumenta di 1"
+          disabled={!canBid || importo >= maxBid}
+          onClick={() => setDraft(String(Math.min(maxBid, importo + 1)))}
           className="display h-12 w-12 shrink-0 rounded-[var(--radius-inner)] bg-pitch-800 text-2xl text-chalk-200 transition hover:bg-pitch-700 active:scale-95 disabled:opacity-40"
         >
           +
@@ -99,20 +121,17 @@ export function BidControls({
       </div>
 
       <div className="flex gap-2">
-        {QUICK_STEPS.map((step) => {
-          const value = lot.current_bid + step;
+        {SCATTI_RAPIDI.map((scatto) => {
+          const valore = lot.current_bid + scatto;
           return (
             <button
-              key={step}
+              key={scatto}
               type="button"
-              disabled={!canBid || value > maxBid || value < minimum}
-              onClick={() => {
-                setTyped(value);
-                onBid(value);
-              }}
+              disabled={!canBid || valore > maxBid || valore < minimum}
+              onClick={() => offri(valore)}
               className="display h-9 flex-1 rounded-[var(--radius-inner)] bg-pitch-800 text-lg text-chalk-100 transition hover:bg-pitch-700 active:scale-95 disabled:opacity-40"
             >
-              +{step}
+              +{scatto}
             </button>
           );
         })}
@@ -124,13 +143,23 @@ export function BidControls({
         className="h-12 w-full text-xl"
         loading={busy}
         disabled={!canBid}
-        onClick={() => onBid(amount)}
+        onClick={() => offri(importo)}
       >
-        {blocked ? "Offerta non disponibile" : `Offri ${amount}`}
+        {blocked ? "Offerta non disponibile" : `Offri ${importo}`}
       </Button>
 
-      <p className="min-h-[1rem] text-center text-[11px] leading-4 text-chalk-400">
-        {blocked ?? (myTeam ? `Puoi arrivare a ${maxBid} crediti.` : "")}
+      <p
+        className={cn(
+          "min-h-[1rem] text-center text-[11px] leading-4",
+          rimastoIndietro ? "text-alarm-400" : "text-chalk-400",
+        )}
+      >
+        {blocked ??
+          (rimastoIndietro
+            ? `Qualcuno ha rilanciato: ora il minimo è ${minimum}.`
+            : myTeam
+              ? `Puoi arrivare a ${maxBid} crediti.`
+              : "")}
       </p>
     </div>
   );
