@@ -360,6 +360,22 @@ stanza video.
 
 ---
 
+## Quale link mandare agli amici
+
+Solo quello pubblico: **https://asta-fantacalcio-pi.vercel.app**
+
+`localhost:3000` funziona solo sul computer che ha avviato `npm run dev`, e un
+indirizzo `192.168.x.x` solo per chi e' collegato allo stesso WiFi. Sono
+indirizzi da sviluppo, non da serata.
+
+Il pulsante "Copia link" costruisce l'invito a partire dall'indirizzo con cui
+si e' entrati, quindi da localhost copia un link che non si apre da nessun'altra
+parte. Per questo la lobby avvisa quando l'indirizzo in uso non e' pubblico:
+chi riceve un link locale vede solo una pagina che non carica, senza alcun
+modo di capire perche'.
+
+---
+
 ## Messa online
 
 Gia' fatta: database su Supabase (`ysoogolibmevpdwersoj`, regione Irlanda) e
