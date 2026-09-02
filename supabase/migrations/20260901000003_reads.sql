@@ -57,6 +57,10 @@ begin
             'credits_remaining', tm.credits_remaining,
             'players_count', tm.players_count,
             'max_bid', public.max_bid_for_team(tm.id),
+            -- Le rose NON viaggiano qui: ogni acquisto e' gia' nello storico
+            -- qui sotto, e ripeterlo per squadra faceva pesare lo snapshot un
+            -- terzo in piu' per niente. Il client le ricava raggruppando lo
+            -- storico per squadra (vedi lib/rosters.ts).
             'members', coalesce((
               select jsonb_agg(jsonb_build_object(
                        'profile_id', p.id,
@@ -69,19 +73,7 @@ begin
                 join public.profiles p on p.id = mm.profile_id
                 left join public.auction_members am
                        on am.auction_id = p_auction_id and am.profile_id = p.id
-               where mm.team_id = tm.id), '[]'::jsonb),
-            'players', coalesce((
-              select jsonb_agg(jsonb_build_object(
-                       'player_id', pl.id,
-                       'first_name', pl.first_name,
-                       'last_name', pl.last_name,
-                       'role', pl.role,
-                       'club', pl.club,
-                       'price', tp.price
-                     ) order by tp.acquired_at desc)
-                from public.team_players tp
-                join public.players pl on pl.id = tp.player_id
-               where tp.team_id = tm.id), '[]'::jsonb)
+               where mm.team_id = tm.id), '[]'::jsonb)
           ) as t
           from public.teams tm
          where tm.auction_id = p_auction_id

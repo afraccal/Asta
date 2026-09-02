@@ -39,10 +39,25 @@ export async function ensureIdentity(displayName: string) {
     if (error) throw error;
   }
 
-  const { error: profileError } = await supabase.rpc("ensure_profile", {
+  let { error: profileError } = await supabase.rpc("ensure_profile", {
     p_display_name: name,
     p_avatar_url: null,
   });
+
+  // La sessione salvata puo' riferirsi a un utente che non esiste piu' (il
+  // database e' stato ricreato, oppure l'utente anonimo e' stato ripulito).
+  // In quel caso il token e' formalmente valido ma non vale niente: invece di
+  // restare bloccati, si butta e si riparte con un'identita' nuova.
+  if (profileError) {
+    await supabase.auth.signOut();
+    const { error: signInError } = await supabase.auth.signInAnonymously();
+    if (signInError) throw signInError;
+
+    ({ error: profileError } = await supabase.rpc("ensure_profile", {
+      p_display_name: name,
+      p_avatar_url: null,
+    }));
+  }
   if (profileError) throw profileError;
 
   storeNickname(name);

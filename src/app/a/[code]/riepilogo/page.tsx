@@ -4,6 +4,7 @@ import { use, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, DownloadSimple } from "@phosphor-icons/react";
 import { NicknameGate } from "@/components/NicknameGate";
+import { LoadingState } from "@/components/LoadingState";
 import { RoleBadge } from "@/components/player/PlayerPortrait";
 import { Button } from "@/components/ui/Button";
 import { useAuctionAccess } from "@/lib/useAuctionAccess";
@@ -26,7 +27,7 @@ export default function RiepilogoPage({ params }: PageProps<"/a/[code]/riepilogo
   const upperCode = code.toUpperCase();
 
   const access = useAuctionAccess(upperCode);
-  const { state } = useAuctionState(access.auctionId);
+  const { state, refresh, error } = useAuctionState(access.auctionId);
 
   const stats = useMemo(() => {
     if (!state) return null;
@@ -43,11 +44,7 @@ export default function RiepilogoPage({ params }: PageProps<"/a/[code]/riepilogo
   }
 
   if (!state || !stats) {
-    return (
-      <main className="flex flex-1 items-center justify-center">
-        <p className="text-sm text-chalk-400">Caricamento…</p>
-      </main>
-    );
+    return <LoadingState error={error} onRetry={refresh} />;
   }
 
   const conclusa = state.auction.status === "completed";

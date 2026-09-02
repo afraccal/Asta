@@ -8,9 +8,7 @@ import { ROLE_COLORS, type Team } from "@/lib/types";
  * Il tavolo di una squadra (§12).
  *
  * Costruito come un tavolo vero: targhetta col nome in alto, una o due
- * postazioni per gli allenatori, e sotto i numeri che contano. Le postazioni
- * hanno gia' il formato 4:3 del video: nella fase 7 la webcam prendera' il
- * posto dell'avatar senza muovere di un pixel il resto del tavolo.
+ * postazioni per gli allenatori, e sotto i numeri che contano.
  *
  * Tre stati, tre significati, nessun colore decorativo:
  * oro = e' in testa all'offerta, verde = tocca a lei chiamare,
@@ -61,7 +59,7 @@ export function TeamTable({
       </header>
 
       <div className="flex flex-1 flex-col gap-1.5 p-2">
-        {/* Postazioni: spazio gia' pronto per la webcam della fase 7 */}
+        {/* Le postazioni degli allenatori */}
         <div className="flex gap-2">
           {Array.from({ length: seats }).map((_, index) => {
             const member = team.members[index];

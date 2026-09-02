@@ -65,6 +65,11 @@ export interface Team {
   /** Offerta massima realmente sostenibile, calcolata dal server. */
   max_bid: number;
   members: TeamMember[];
+  /**
+   * Ricavata dal client raggruppando lo storico (vedi lib/rosters.ts):
+   * lo snapshot del server non la contiene, per non trasmettere due volte
+   * gli stessi acquisti.
+   */
   players: RosterPlayer[];
 }
 

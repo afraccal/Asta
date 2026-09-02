@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Field } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 import { NicknameGate } from "@/components/NicknameGate";
+import { LoadingState } from "@/components/LoadingState";
 import { ImportPreview } from "@/components/listone/ImportPreview";
 import { previewListone, type PreviewResult } from "@/app/actions/listone";
 import { useAuctionAccess } from "@/lib/useAuctionAccess";
@@ -129,11 +130,7 @@ export default function ListonePage({ params }: PageProps<"/a/[code]/listone">) 
   }
 
   if (!state) {
-    return (
-      <main className="flex flex-1 items-center justify-center">
-        <p className="text-sm text-chalk-400">Caricamento…</p>
-      </main>
-    );
+    return <LoadingState onRetry={refresh} />;
   }
 
   if (!state.me.is_admin) {

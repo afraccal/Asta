@@ -64,7 +64,7 @@ export default function HomePage() {
             Fantacalcio
           </h1>
           <p className="text-sm text-chalk-400">
-            Aprite il link, accendete le webcam, iniziate l&apos;asta.
+            Aprite il link, sedetevi ai tavoli, iniziate l&apos;asta.
           </p>
         </header>
 

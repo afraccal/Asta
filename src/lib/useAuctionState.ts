@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { measureClockOffset, type ClockSync } from "@/lib/serverClock";
+import { withRosters } from "@/lib/rosters";
 import type { AuctionEvent, AuctionState } from "@/lib/types";
 
 export type ConnectionStatus = "connecting" | "live" | "offline";
@@ -60,7 +61,9 @@ export function useAuctionState(auctionId: string | null): UseAuctionStateResult
       });
       if (rpcError) throw rpcError;
 
-      const next = data as AuctionState;
+      // Le rose si ricavano qui dallo storico: il server non le manda per non
+      // trasmettere due volte gli stessi acquisti.
+      const next = withRosters(data as AuctionState);
       versionRef.current = next.auction.state_version;
       setState(next);
       setError(null);
@@ -83,6 +86,20 @@ export function useAuctionState(auctionId: string | null): UseAuctionStateResult
       active = false;
     };
   }, [auctionId]);
+
+  // --- Primo snapshot -----------------------------------------------------------
+  useEffect(() => {
+    // Deve avvenire INDIPENDENTEMENTE dal canale realtime. Prima lo faceva
+    // partire la sottoscrizione, e bastava un websocket che non si apriva
+    // (rete che lo blocca, token scaduto, proxy di mezzo) per lasciare la sala
+    // bloccata su "Ingresso in sala..." all'infinito: senza dati, non solo
+    // senza aggiornamenti.
+    // refresh() tocca lo stato solo DOPO una chiamata di rete attesa, quindi
+    // non provoca il render a cascata che la regola vuole evitare; il linter
+    // non riesce a dimostrarlo attraverso l'await.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refresh();
+  }, [refresh]);
 
   // --- Canale realtime ----------------------------------------------------------
   useEffect(() => {
@@ -142,9 +159,9 @@ export function useAuctionState(auctionId: string | null): UseAuctionStateResult
 
     channel.subscribe((status: string) => {
       if (disposed) return;
-      // Il primo snapshot parte da qui, non da un effetto separato: cosi'
-      // si carica una volta sola e si copre anche il caso in cui il
-      // websocket sia bloccato dalla rete, dove i dati servono comunque.
+      // Un secondo allineamento all'apertura del canale copre il buco fra il
+      // caricamento e la sottoscrizione. Se arriva mentre il primo e' ancora
+      // in volo, refreshingRef lo scarta: non si scarica due volte.
       if (status === "SUBSCRIBED") {
         setConnection("live");
         void refresh();

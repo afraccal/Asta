@@ -3,7 +3,7 @@
 Sala d'asta virtuale per il fantacalcio tra amici. Piu' partecipanti si
 collegano da PC o smartphone alla stessa stanza e fanno l'asta in tempo reale.
 
-**Stato:** Fasi 1-6 di 8 completate. L'asta si gioca dall'inizio alla fine.
+**Stato:** completo. Fasi 1-6 e 8 fatte, fase 7 (videochiamata) esclusa dallo scopo.
 
 ---
 
@@ -22,7 +22,7 @@ Le chiavi stampate da `db:start` vanno in `.env.local` (vedi `.env.example`).
 ## Test
 
 ```bash
-npm run test:all      # tutto: parser, integrazione, ciclo asta, concorrenza
+npm run test:all      # tutto: unita', integrazione, sicurezza, concorrenza, browser
 ```
 
 - `test` (vitest) — parser del listone, importazione end-to-end, calcolo del
@@ -35,6 +35,14 @@ npm run test:all      # tutto: parser, integrazione, ciclo asta, concorrenza
 - `test:concurrency` — 8 processi `psql` indipendenti che colpiscono la stessa
   asta nello stesso istante: offerte identiche, offerte crescenti, chiusure
   simultanee dello stesso lotto.
+- `test:e2e` (Playwright) — la sala guidata da un browser vero: che si carichi,
+  che ci si possa sedere a un tavolo ad asta iniziata, che un rilancio altrui
+  compaia sullo schermo senza ricaricare, che lo storico si apra.
+
+I test di sicurezza in `src/lib/security.test.ts` provano davvero a barare con
+la chiave pubblica del browser: modificare i crediti, inserire offerte a mano,
+nominarsi amministratore, leggere le aste altrui, invocare gli helper interni.
+Tutti devono fallire.
 
 ---
 
@@ -249,9 +257,6 @@ all'offerta. **Verde** = tocca a lui chiamare. **Bordo chiaro** = sei tu.
 Nessuna decorazione: se un elemento e' colorato, quel colore significa
 qualcosa.
 
-I tavoli hanno gia' il formato 4:3 nelle postazioni degli allenatori: nella
-fase 7 la webcam prendera' il posto dell'avatar senza spostare un pixel.
-
 Il pulsante **TV** in alto a destra toglie di mezzo il contorno e ingrandisce
 il palco. Non ingrandisce i tavoli: farlo spingeva fuori schermo l'ottavo
 tavolo e il pulsante d'offerta, cioe' proprio quello che si vuole vedere
@@ -282,6 +287,68 @@ file aperto in Excel, ed e' l'unica parte che vale la pena verificare da sola.
 
 ---
 
+## Messa online
+
+Servono un progetto Supabase e un account Vercel, entrambi gratuiti.
+
+### 1. Database
+
+```bash
+npx supabase link --project-ref <id-del-progetto>
+npx supabase db push
+```
+
+Poi, nella dashboard Supabase:
+
+- **Authentication -> Sign In / Providers**: attivare **Anonymous sign-ins**.
+  Senza, nessuno riesce a entrare.
+- **Database -> Extensions**: verificare che **pg_cron** sia attiva.
+
+⚠️ **Controllo da non saltare.** La chiusura automatica dei lotti dipende da un
+job che gira ogni secondo. Se l'estensione non fosse disponibile la migrazione
+non fallisce, si limita ad avvisare: senza questa verifica il difetto si
+scoprirebbe solo durante l'asta, con un giocatore che resta appeso perche' chi
+doveva chiudere il lotto ha chiuso il browser.
+
+```sql
+select jobname, schedule, active from cron.job;
+-- deve comparire: asta-finalize-expired-lots | 1 seconds | t
+```
+
+### 2. Applicazione
+
+Su Vercel, importare il repository e impostare due variabili d'ambiente
+(**Settings -> Environment Variables**), prese da Supabase in
+*Project Settings -> API*:
+
+| Variabile | Valore |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | l'URL del progetto |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | la chiave anon/publishable |
+
+Entrambe finiscono nel browser: e' previsto. La sicurezza non poggia sulla
+segretezza della chiave ma sulle RLS e sui permessi di esecuzione, che i test
+di sicurezza verificano. La chiave `service_role` invece **non va mai** messa
+in una variabile `NEXT_PUBLIC_`.
+
+### 3. Prima dell'asta vera
+
+- Caricare il listone e controllare che i conteggi per ruolo tornino.
+- Aprire il link su due dispositivi diversi e fare un rilancio: il numero deve
+  cambiare sull'altro schermo senza ricaricare.
+- Lasciare scadere un timer con **tutti i browser chiusi** e verificare che il
+  giocatore risulti comunque assegnato: e' la prova che il job sta girando.
+
+### Da sapere
+
+- Sul piano gratuito Supabase **mette in pausa** i progetti inattivi da una
+  settimana. Se l'asta e' stagionale, riattivare il progetto dalla dashboard
+  qualche ora prima.
+- Da qui in avanti le migrazioni sono **append-only**: una volta applicate in
+  produzione, modificarle a posteriori manderebbe fuori sincrono il database.
+
+---
+
 ## Roadmap
 
 | Fase | Contenuto | Stato |
@@ -293,5 +360,5 @@ file aperto in Excel, ed e' l'unica parte che vale la pena verificare da sola.
 | 4 | Realtime, riconnessioni | ✅ |
 | 5 | Storico, turni, pausa/ripresa, chiusura | ✅ |
 | 6 | Sala d'asta, tavoli, animazioni, modalità TV | ✅ |
-| 7 | Videochiamata (LiveKit, isolata dall'asta) | ⬜ |
-| 8 | Test E2E multi-utente, hardening, deploy | ⬜ |
+| 7 | Videochiamata | ❌ fuori scope, scelta del 2 settembre 2026 |
+| 8 | Test E2E, sicurezza, gestione errori, deploy | ✅ |

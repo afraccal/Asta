@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TelevisionSimple, ArrowLeft, ClockCounterClockwise } from "@phosphor-icons/react";
 import { NicknameGate } from "@/components/NicknameGate";
+import { LoadingState } from "@/components/LoadingState";
 import { RoomStage } from "@/components/auction/RoomStage";
 import { BidControls } from "@/components/auction/BidControls";
 import { TeamTable } from "@/components/auction/TeamTable";
@@ -39,7 +40,7 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
   const router = useRouter();
 
   const access = useAuctionAccess(upperCode);
-  const { state, clock, connection, refresh } = useAuctionState(access.auctionId);
+  const { state, clock, connection, refresh, error } = useAuctionState(access.auctionId);
 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -85,11 +86,7 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
   }
 
   if (!state || !auction || !access.auctionId) {
-    return (
-      <main className="flex flex-1 items-center justify-center">
-        <p className="text-sm text-chalk-400">Ingresso in sala…</p>
-      </main>
-    );
+    return <LoadingState message="Ingresso in sala…" error={error} onRetry={refresh} />;
   }
 
   const supabase = getSupabaseBrowser();

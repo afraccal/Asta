@@ -15,7 +15,8 @@
     "test:db": "npm run test:flow && npm run test:concurrency",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:all": "npm run test && npm run test:db"
+    "test:all": "npm run test && npm run test:db && npm run test:e2e",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -32,6 +33,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",

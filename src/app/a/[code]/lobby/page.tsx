@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { NicknameGate } from "@/components/NicknameGate";
+import { LoadingState } from "@/components/LoadingState";
 import { InviteBar } from "@/components/lobby/InviteBar";
 import { TeamSlot } from "@/components/lobby/TeamSlot";
 import { useAuctionAccess } from "@/lib/useAuctionAccess";
@@ -19,7 +20,7 @@ export default function LobbyPage({ params }: PageProps<"/a/[code]/lobby">) {
   const router = useRouter();
 
   const access = useAuctionAccess(upperCode);
-  const { state, connection, refresh } = useAuctionState(access.auctionId);
+  const { state, connection, refresh, error: stateError } = useAuctionState(access.auctionId);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -54,11 +55,7 @@ export default function LobbyPage({ params }: PageProps<"/a/[code]/lobby">) {
   }
 
   if (!state) {
-    return (
-      <main className="flex flex-1 items-center justify-center">
-        <p className="text-sm text-chalk-400">Ingresso nella stanza…</p>
-      </main>
-    );
+    return <LoadingState message="Ingresso nella stanza…" error={stateError} onRetry={refresh} />;
   }
 
   const { auction, teams, me } = state;

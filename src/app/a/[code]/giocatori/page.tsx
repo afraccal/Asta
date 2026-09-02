@@ -3,6 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { NicknameGate } from "@/components/NicknameGate";
+import { LoadingState } from "@/components/LoadingState";
 import { PlayerSearch } from "@/components/player/PlayerSearch";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { useAuctionAccess } from "@/lib/useAuctionAccess";
@@ -21,7 +22,7 @@ export default function GiocatoriPage({ params }: PageProps<"/a/[code]/giocatori
   const upperCode = code.toUpperCase();
 
   const access = useAuctionAccess(upperCode);
-  const { state } = useAuctionState(access.auctionId);
+  const { state, refresh, error } = useAuctionState(access.auctionId);
   const [selected, setSelected] = useState<Player | null>(null);
 
   if (access.phase === "need-nickname") {
@@ -31,11 +32,7 @@ export default function GiocatoriPage({ params }: PageProps<"/a/[code]/giocatori
   }
 
   if (!state || !access.auctionId) {
-    return (
-      <main className="flex flex-1 items-center justify-center">
-        <p className="text-sm text-chalk-400">Caricamento…</p>
-      </main>
-    );
+    return <LoadingState error={error} onRetry={refresh} />;
   }
 
   return (
