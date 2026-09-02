@@ -1,5 +1,7 @@
 # Asta Fantacalcio
 
+**In linea: https://asta-fantacalcio-pi.vercel.app**
+
 Sala d'asta virtuale per il fantacalcio tra amici. Piu' partecipanti si
 collegano da PC o smartphone alla stessa stanza e fanno l'asta in tempo reale.
 
@@ -289,6 +291,10 @@ file aperto in Excel, ed e' l'unica parte che vale la pena verificare da sola.
 
 ## Messa online
 
+Gia' fatta: database su Supabase (`ysoogolibmevpdwersoj`, regione Irlanda) e
+applicazione su Vercel. Quanto segue serve per rifarla da zero, o per capire
+cosa e' stato configurato.
+
 Servono un progetto Supabase e un account Vercel, entrambi gratuiti.
 
 ### 1. Database
@@ -331,7 +337,19 @@ segretezza della chiave ma sulle RLS e sui permessi di esecuzione, che i test
 di sicurezza verificano. La chiave `service_role` invece **non va mai** messa
 in una variabile `NEXT_PUBLIC_`.
 
-### 3. Prima dell'asta vera
+### 3. Aggiornare l'applicazione
+
+Il repository non e' collegato automaticamente a Vercel (richiede di
+autorizzare l'app Vercel su GitHub). Finche' non lo si fa, si pubblica a mano:
+
+```bash
+npx vercel deploy --prod --yes
+```
+
+Per attivare la pubblicazione automatica a ogni push: dalla dashboard Vercel,
+**Settings -> Git -> Connect Git Repository**.
+
+### 4. Prima dell'asta vera
 
 - Caricare il listone e controllare che i conteggi per ruolo tornino.
 - Aprire il link su due dispositivi diversi e fare un rilancio: il numero deve
