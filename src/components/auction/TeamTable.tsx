@@ -2,7 +2,8 @@
 
 import { cn } from "@/lib/cn";
 import { VideoTile } from "@/components/video/VideoTile";
-import { ROLE_COLORS, type Team } from "@/lib/types";
+import { ROLE_COLORS, type AuctionInfo, type Team } from "@/lib/types";
+import { RUOLI, contaPerRuolo } from "@/lib/roster";
 
 /**
  * Il tavolo di una squadra (§12).
@@ -16,18 +17,23 @@ import { ROLE_COLORS, type Team } from "@/lib/types";
  */
 export function TeamTable({
   team,
+  auction,
   isLeader,
   isTurn,
   isMine,
   compact,
 }: {
   team: Team;
+  /** Serve solo per mostrare i posti per ruolo; se manca non si mostrano. */
+  auction?: Pick<AuctionInfo, "slots">;
   isLeader: boolean;
   isTurn: boolean;
   isMine: boolean;
   compact?: boolean;
 }) {
   const seats = Math.max(1, team.members.length);
+  const perRuolo = contaPerRuolo(team);
+  const limiti = auction?.slots;
   const recent = compact ? [] : team.players.slice(0, 2);
 
   return (
@@ -122,6 +128,39 @@ export function TeamTable({
             </dt>
           </div>
         </dl>
+
+        {/* Reparti: si vede a colpo d'occhio dove manca ancora qualcuno,
+            e quando un reparto e' completo si spegne. */}
+        {!compact && limiti && (
+          <dl className="flex justify-between gap-1 border-t border-white/[0.06] pt-1.5">
+            {RUOLI.map((ruolo) => {
+              const limite = limiti[ruolo];
+              const presi = perRuolo[ruolo];
+              const completo = limite !== null && presi >= limite;
+              return (
+                <div key={ruolo} className="flex items-baseline gap-1">
+                  <dt
+                    className="display"
+                    style={{
+                      color: ROLE_COLORS[ruolo],
+                      opacity: completo ? 0.45 : 1,
+                      fontSize: "var(--text-label)",
+                    }}
+                  >
+                    {ruolo}
+                  </dt>
+                  <dd
+                    className={cn("tabular", completo ? "text-chalk-600" : "text-chalk-300")}
+                    style={{ fontSize: "var(--text-label)" }}
+                  >
+                    {presi}
+                    {limite !== null && <span className="text-chalk-600">/{limite}</span>}
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+        )}
 
         {/* Ultimi acquisti: il tavolo racconta cosa ha gia' preso (§12) */}
         {!compact && recent.length > 0 && (

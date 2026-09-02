@@ -133,6 +133,8 @@ export interface AuctionInfo {
   budget_initial: number;
   team_count: number;
   slots_per_team: number | null;
+  /** Posti per ruolo. Valori nulli = nessun limite su quel ruolo. */
+  slots: Record<PlayerRole, number | null>;
   bid_timer_seconds: number;
   nomination_timeout_seconds: number;
   min_increment: number;

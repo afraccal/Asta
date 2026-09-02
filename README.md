@@ -261,8 +261,16 @@ supabase/
   non partecipano.
 - L'amministratore puo' mettere in pausa: i secondi residui vengono congelati e
   restituiti alla ripresa. Puo' anche offrire per una squadra disconnessa.
-- Se e' impostata la dimensione della rosa, il sistema tiene da parte 1 credito
-  per ogni slot vuoto, cosi' nessuno resta con la rosa incompleta.
+- Rosa a reparti fissi, con i valori del fantacalcio classico: 3 portieri, 8
+  difensori, 8 centrocampisti, 6 attaccanti. Chi ha completato un reparto non
+  puo' nemmeno rilanciare su un giocatore di quel ruolo. Il sistema tiene
+  inoltre da parte 1 credito per ogni posto ancora vuoto, cosi' nessuno resta
+  con la rosa incompleta. I numeri sono modificabili alla creazione.
+- Si puo' iniziare appena si e' in due: i tavoli ancora liberi restano al loro
+  posto, chi arriva dopo si siede ad asta iniziata, e il giro di chiamata salta
+  i tavoli vuoti reinserendoli appena qualcuno si accomoda.
+- La videochiamata e' disponibile gia' in lobby: ci si vede mentre si aspettano
+  i ritardatari, senza dover avviare l'asta per forza.
 
 ---
 

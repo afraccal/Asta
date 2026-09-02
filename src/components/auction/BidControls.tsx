@@ -28,6 +28,8 @@ export function BidControls({
   minIncrement,
   paused,
   busy,
+  repartoPieno,
+  nomeReparto,
   onBid,
 }: {
   lot: Lot;
@@ -35,6 +37,9 @@ export function BidControls({
   minIncrement: number;
   paused: boolean;
   busy: boolean;
+  /** La squadra ha gia' completato il reparto di questo giocatore. */
+  repartoPieno: boolean;
+  nomeReparto: string;
   onBid: (amount: number) => void;
 }) {
   const [draft, setDraft] = useState<BidDraft>(null);
@@ -54,9 +59,11 @@ export function BidControls({
       ? "Asta in pausa."
       : leading
         ? "Sei tu in testa all'offerta."
-        : !affordable
-          ? `Non ti bastano i crediti: puoi arrivare a ${maxBid}.`
-          : null;
+        : repartoPieno
+          ? `Hai già tutti i ${nomeReparto} che ti servono.`
+          : !affordable
+            ? `Non ti bastano i crediti: puoi arrivare a ${maxBid}.`
+            : null;
 
   const canBid = blocked === null && !busy;
 

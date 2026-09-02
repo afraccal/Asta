@@ -27,6 +27,7 @@ import { useCountdown } from "@/lib/useCountdown";
 import { useLotFinalizer } from "@/lib/useLotFinalizer";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { friendlyError } from "@/lib/errors";
+import { NOMI_REPARTO, repartoPieno } from "@/lib/roster";
 import { cn } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
@@ -150,6 +151,7 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
       <TeamTable
         key={team.id}
         team={team}
+        auction={auction}
         compact={compact}
         isLeader={leaderTeam?.id === team.id}
         isTurn={turnTeam?.id === team.id}
@@ -329,6 +331,10 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
                 minIncrement={auction.min_increment}
                 paused={paused}
                 busy={busy}
+                repartoPieno={
+                  myTeam !== null && repartoPieno(auction, myTeam, lot.player.role)
+                }
+                nomeReparto={NOMI_REPARTO[lot.player.role]}
                 onBid={handleBid}
               />
             )

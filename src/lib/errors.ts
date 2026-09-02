@@ -34,6 +34,7 @@ const MESSAGES: Record<string, string> = {
   already_leading: "Sei gia' tu in testa all'offerta.",
   bid_too_low: "Qualcuno ti ha preceduto: devi superare l'offerta attuale.",
   insufficient_credits: "Crediti insufficienti per questa offerta.",
+  role_full: "Hai già completato questo reparto: non puoi prendere altri giocatori di questo ruolo.",
   code_generation_failed: "Impossibile generare il codice, riprova.",
 };
 

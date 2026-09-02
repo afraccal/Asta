@@ -298,6 +298,12 @@
     .room-side  { display: flex; }
     .room-strip { display: none; }
 
+    /* Con i tavoli ai lati l'altezza della sala va FISSATA, non solo garantita
+       come minimo: altrimenti una colonna di otto tavoli fa crescere la pagina
+       e il palco finisce sotto il bordo dello schermo. Bloccata cosi', sono le
+       colonne a scorrere al proprio interno. Sugli schermi bassi e sui telefoni
+       resta un minimo, perche' li' scorrere e' giusto. */
+    .room-light { height: 100dvh; }
   }
 
   .area-left  { grid-area: left; }

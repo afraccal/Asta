@@ -100,15 +100,25 @@ begin
   select id into v_player2 from public.players where list_id = v_list_id and last_name = 'Barella';
   raise notice 'OK  4. Listone caricato (3 giocatori)';
 
-  -- --- 5. Avvio: le squadre vuote non partecipano ---------------------------
+  -- --- 5. Avvio: i tavoli liberi restano per chi arriva dopo -----------------
   perform public.start_auction(v_auction.id, false);
 
+  -- Comportamento cambiato di proposito: prima le squadre vuote venivano
+  -- cancellate e chi arrivava tardi non trovava piu' un posto.
   select count(*) into v_count from public.teams where auction_id = v_auction.id;
-  if v_count <> 3 then raise exception 'FAIL: attese 3 squadre dopo l''avvio, trovate %', v_count; end if;
+  if v_count <> 8 then raise exception 'FAIL: attesi 8 tavoli dopo l''avvio, trovati %', v_count; end if;
 
   select status into v_ok from (select status = 'running' as status from public.auctions where id = v_auction.id) s;
   if not v_ok then raise exception 'FAIL: l''asta non risulta in corso'; end if;
-  raise notice 'OK  5. Asta avviata, squadre vuote rimosse (3 in gioco)';
+
+  -- E il turno non deve mai finire su un tavolo senza nessuno
+  if not exists (
+    select 1 from public.team_members m
+     where m.team_id = public.current_turn_team_id(v_auction.id)
+  ) then
+    raise exception 'FAIL: il turno e'' su un tavolo vuoto';
+  end if;
+  raise notice 'OK  5. Asta avviata: 8 tavoli, 3 occupati, il turno salta i vuoti';
 
   -- --- 6. Chiamata: il banditore parte da 1 credito --------------------------
   v_turn := public.current_turn_team_id(v_auction.id);
@@ -278,7 +288,7 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', admin_id)::text, true);
   v_state := public.get_auction_state(v_auction.id);
 
-  if jsonb_array_length(v_state->'teams') <> 3 then
+  if jsonb_array_length(v_state->'teams') <> 8 then
     raise exception 'FAIL: snapshot con % squadre', jsonb_array_length(v_state->'teams');
   end if;
   if v_state->'lot'->>'id' is null then raise exception 'FAIL: snapshot senza lotto attivo'; end if;

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/ui/Avatar";
+import { VideoTile } from "@/components/video/VideoTile";
+import { useVideo } from "@/components/video/VideoProvider";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import type { Team } from "@/lib/types";
@@ -30,6 +32,11 @@ export function TeamSlot({
 }: Props) {
   // La bozza esiste solo durante la modifica: si inizializza al click, così
   // non serve tenerla sincronizzata con il nome che arriva dal server.
+  // A videochiamata accesa le pastiglie diventano riquadri: ci si vede gia'
+  // in lobby, senza dover avviare l'asta solo per potersi parlare.
+  const video = useVideo();
+  const inVideo = video?.stato === "acceso";
+
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
@@ -97,6 +104,18 @@ export function TeamSlot({
       <div className="flex min-h-[2.25rem] flex-wrap items-center gap-2">
         {team.members.length === 0 ? (
           <span className="text-sm text-chalk-600">Posto libero</span>
+        ) : inVideo ? (
+          team.members.map((m) => (
+            <div key={m.profile_id} className="h-16 w-[5.5rem]">
+              <VideoTile
+                profileId={m.profile_id}
+                nome={m.display_name}
+                avatarUrl={m.avatar_url}
+                online={m.online}
+                dimensioneAvatar={24}
+              />
+            </div>
+          ))
         ) : (
           team.members.map((m) => (
             <span

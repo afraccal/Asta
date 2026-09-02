@@ -8,6 +8,7 @@ import { Input, Field } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { friendlyError } from "@/lib/errors";
+import { ROLE_LABELS } from "@/lib/types";
 
 export default function CreateAuctionPage() {
   const router = useRouter();
@@ -15,8 +16,11 @@ export default function CreateAuctionPage() {
   const [budget, setBudget] = useState(500);
   const [teamCount, setTeamCount] = useState(8);
   const [timer, setTimer] = useState(10);
-  const [useSlots, setUseSlots] = useState(false);
-  const [slots, setSlots] = useState(25);
+  // Predefiniti del fantacalcio classico: chi non tocca niente ottiene la
+  // regola che tutti si aspettano.
+  const [limitiAttivi, setLimitiAttivi] = useState(true);
+  const [posti, setPosti] = useState({ P: 3, D: 8, C: 8, A: 6 });
+  const totalePosti = posti.P + posti.D + posti.C + posti.A;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,9 +33,13 @@ export default function CreateAuctionPage() {
         p_name: name,
         p_budget: budget,
         p_team_count: teamCount,
-        p_slots_per_team: useSlots ? slots : null,
+        p_slots_per_team: null,
         p_bid_timer: timer,
         p_list_id: null,
+        p_slots_p: limitiAttivi ? posti.P : null,
+        p_slots_d: limitiAttivi ? posti.D : null,
+        p_slots_c: limitiAttivi ? posti.C : null,
+        p_slots_a: limitiAttivi ? posti.A : null,
       });
       if (rpcError) throw rpcError;
       const auction = data as { code: string };
@@ -105,33 +113,46 @@ export default function CreateAuctionPage() {
             <label className="flex items-start gap-3">
               <input
                 type="checkbox"
-                checked={useSlots}
-                onChange={(e) => setUseSlots(e.target.checked)}
+                checked={limitiAttivi}
+                onChange={(e) => setLimitiAttivi(e.target.checked)}
                 className="mt-1 size-4 accent-[var(--color-brand-500)]"
               />
               <span className="space-y-1">
                 <span className="block text-sm font-medium text-chalk-50">
-                  Limita la dimensione della rosa
+                  Rosa a reparti fissi
                 </span>
                 <span className="block text-xs text-chalk-400">
-                  Se attivo, il sistema tiene da parte 1 credito per ogni slot ancora
-                  vuoto: nessuno può svuotare il budget e restare con la rosa
-                  incompleta.
+                  Nessuno può comprare più giocatori del previsto in un reparto. Il
+                  sistema tiene inoltre da parte 1 credito per ogni posto ancora
+                  vuoto, così nessuno resta con la rosa incompleta.
                 </span>
               </span>
             </label>
 
-            {useSlots && (
-              <Field label="Giocatori per squadra">
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={60}
-                  value={slots}
-                  onChange={(e) => setSlots(Number(e.target.value))}
-                />
-              </Field>
+            {limitiAttivi && (
+              <>
+                <div className="grid grid-cols-4 gap-2">
+                  {(["P", "D", "C", "A"] as const).map((ruolo) => (
+                    <Field key={ruolo} label={ROLE_LABELS[ruolo]}>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        max={30}
+                        value={posti[ruolo]}
+                        onChange={(e) =>
+                          setPosti((p) => ({ ...p, [ruolo]: Number(e.target.value) }))
+                        }
+                        className="text-center"
+                      />
+                    </Field>
+                  ))}
+                </div>
+                <p className="text-xs text-chalk-600">
+                  {totalePosti} giocatori per squadra.
+                  {totalePosti === 25 && " È la rosa classica del fantacalcio."}
+                </p>
+              </>
             )}
           </div>
 

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { NicknameGate } from "@/components/NicknameGate";
 import { ThemeCycleButton } from "@/components/ui/ThemeSwitcher";
+import { VideoProvider } from "@/components/video/VideoProvider";
+import { VideoControls } from "@/components/video/VideoControls";
 import { LoadingState } from "@/components/LoadingState";
 import { InviteBar } from "@/components/lobby/InviteBar";
 import { TeamSlot } from "@/components/lobby/TeamSlot";
@@ -81,7 +83,10 @@ export default function LobbyPage({ params }: PageProps<"/a/[code]/lobby">) {
   const supabase = getSupabaseBrowser();
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 py-8 sm:px-6">
+    // La videochiamata e' disponibile gia' qui: cosi' ci si vede mentre si
+    // aspettano i ritardatari, senza dover avviare l'asta per forza.
+    <VideoProvider auctionId={access.auctionId!}>
+      <main className="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 py-8 sm:px-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <Link
@@ -93,6 +98,7 @@ export default function LobbyPage({ params }: PageProps<"/a/[code]/lobby">) {
           <h1 className="display text-4xl text-chalk-50 sm:text-5xl">{auction.name}</h1>
         </div>
         <div className="flex items-center gap-3">
+        <VideoControls />
         <ThemeCycleButton />
         <span
           className="flex items-center gap-2 text-xs text-chalk-400"
@@ -206,11 +212,13 @@ export default function LobbyPage({ params }: PageProps<"/a/[code]/lobby">) {
             Sorteggia l&apos;ordine e inizia l&apos;asta
           </Button>
           <p className="text-center text-xs text-chalk-600">
-            Le squadre rimaste vuote verranno rimosse. L&apos;ordine di chiamata viene
-            sorteggiato.
+            Bastano due squadre per cominciare: i tavoli ancora liberi restano, e chi
+            arriva dopo potrà sedersi ad asta iniziata. L&apos;ordine di chiamata viene
+            sorteggiato e salta i tavoli vuoti.
           </p>
         </section>
       )}
-    </main>
+      </main>
+    </VideoProvider>
   );
 }
