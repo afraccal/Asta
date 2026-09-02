@@ -3,9 +3,9 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { TelevisionSimple, ArrowLeft } from "@phosphor-icons/react";
 import { NicknameGate } from "@/components/NicknameGate";
-import { PlayerPortrait, RoleBadge } from "@/components/player/PlayerPortrait";
-import { CountdownRing } from "@/components/auction/CountdownRing";
+import { RoomStage } from "@/components/auction/RoomStage";
 import { BidControls } from "@/components/auction/BidControls";
 import { TeamTable } from "@/components/auction/TeamTable";
 import { NominationPanel } from "@/components/auction/NominationPanel";
@@ -18,7 +18,8 @@ import { useCountdown } from "@/lib/useCountdown";
 import { useLotFinalizer } from "@/lib/useLotFinalizer";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { friendlyError } from "@/lib/errors";
-import { ROLE_LABELS, playerFullName, type Player } from "@/lib/types";
+import { cn } from "@/lib/cn";
+import type { Player } from "@/lib/types";
 
 /**
  * Quanto resta in scena la schermata "ASSEGNATO!", contati dall'istante di
@@ -29,7 +30,7 @@ import { ROLE_LABELS, playerFullName, type Player } from "@/lib/types";
  */
 const CELEBRATION_MS = 5500;
 
-export default function RoomPage({ params }: PageProps<"/a/[code]/room"> ) {
+export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
   const { code } = use(params);
   const upperCode = code.toUpperCase();
   const router = useRouter();
@@ -39,6 +40,7 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room"> ) {
 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [tvMode, setTvMode] = useState(false);
 
   const auction = state?.auction ?? null;
   const lot = state?.lot ?? null;
@@ -55,7 +57,6 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room"> ) {
   // di sicurezza. finalize_lot è idempotente, quindi non possono confliggere.
   useLotFinalizer(lot, remainingMs, auction?.status === "running");
 
-  // Tempo a disposizione del banditore per scegliere.
   const nominationRemaining = useCountdown(
     !lot && auction?.turn_started_at_ms
       ? auction.turn_started_at_ms + auction.nomination_timeout_seconds * 1000
@@ -134,177 +135,157 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room"> ) {
     );
   }
 
+  const tables = (from: number, to: number, compact = false) =>
+    state.teams.slice(from, to).map((team) => (
+      <TeamTable
+        key={team.id}
+        team={team}
+        compact={compact}
+        isLeader={leaderTeam?.id === team.id}
+        isTurn={turnTeam?.id === team.id}
+        isMine={myTeam?.id === team.id}
+      />
+    ));
+
   return (
-    <>
+    <div
+      className={cn(
+        "room-light relative flex min-h-[100dvh] flex-col",
+        tvMode && "tv-mode",
+      )}
+    >
       <ConnectionBanner connection={connection} />
 
-      <main className="mx-auto flex w-full max-w-[110rem] flex-1 flex-col gap-4 px-3 py-4 sm:px-5">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <h1 className="display text-2xl text-chalk-50 sm:text-3xl">{auction.name}</h1>
-            <StatusPill status={auction.status} liveLot={lot !== null} />
-          </div>
+      <header
+        className={cn(
+          "relative z-20 flex shrink-0 items-center gap-2 px-3 py-1.5 sm:gap-3 sm:px-5",
+          tvMode && "py-1",
+        )}
+      >
+        <h1
+          className="display min-w-0 flex-1 truncate text-chalk-50"
+          style={{ fontSize: "var(--text-table-name)" }}
+        >
+          {auction.name}
+        </h1>
+        <StatusPill status={auction.status} liveLot={lot !== null} />
 
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          {!tvMode && state.me.is_admin && (
+            <AdminBar
+              status={auction.status}
+              hasLiveLot={lot !== null}
+              busy={busy}
+              onPause={() => run(() => supabase.rpc("pause_auction", { p_auction_id: auction.id }))}
+              onResume={() => run(() => supabase.rpc("resume_auction", { p_auction_id: auction.id }))}
+              onSkipTurn={() => run(() => supabase.rpc("skip_turn", { p_auction_id: auction.id }))}
+              onCancelLot={() => run(() => supabase.rpc("cancel_lot", { p_lot_id: lot!.id }))}
+              onEnd={() => run(() => supabase.rpc("end_auction", { p_auction_id: auction.id }))}
+            />
+          )}
+
+          <button
+            type="button"
+            onClick={() => setTvMode((on) => !on)}
+            aria-pressed={tvMode}
+            title={tvMode ? "Esci dalla modalità TV" : "Modalità TV: più grande, senza contorno"}
+            className={cn(
+              "flex size-8 items-center justify-center rounded-[var(--radius-inner)] transition",
+              tvMode
+                ? "bg-chalk-50 text-pitch-950"
+                : "bg-pitch-800 text-chalk-400 hover:text-chalk-50",
+            )}
+          >
+            <TelevisionSimple size={18} weight="bold" />
+          </button>
+
+          {!tvMode && (
             <Link
               href={`/a/${upperCode}/lobby`}
-              className="text-sm text-chalk-400 transition hover:text-chalk-50"
+              title="Torna alla lobby"
+              className="flex size-8 items-center justify-center rounded-[var(--radius-inner)] bg-pitch-800 text-chalk-400 transition hover:text-chalk-50"
             >
-              Lobby
+              <ArrowLeft size={18} weight="bold" />
             </Link>
-            {state.me.is_admin && (
-              <AdminBar
-                status={auction.status}
-                hasLiveLot={lot !== null}
-                busy={busy}
-                onPause={() => run(() => supabase.rpc("pause_auction", { p_auction_id: auction.id }))}
-                onResume={() => run(() => supabase.rpc("resume_auction", { p_auction_id: auction.id }))}
-                onSkipTurn={() => run(() => supabase.rpc("skip_turn", { p_auction_id: auction.id }))}
-                onCancelLot={() => run(() => supabase.rpc("cancel_lot", { p_lot_id: lot!.id }))}
-                onEnd={() => run(() => supabase.rpc("end_auction", { p_auction_id: auction.id }))}
-              />
-            )}
-          </div>
-        </header>
-
-        <div className="grid flex-1 gap-4 lg:grid-cols-[13rem_minmax(0,1fr)_13rem]">
-          <aside className="hidden flex-col gap-3 lg:flex">
-            {state.teams.slice(0, half).map((team) => (
-              <TeamTable
-                key={team.id}
-                team={team}
-                isLeader={leaderTeam?.id === team.id}
-                isTurn={turnTeam?.id === team.id}
-                isMine={myTeam?.id === team.id}
-                lastBid={lot?.current_bid}
-              />
-            ))}
-          </aside>
-
-          <section className="surface flex min-h-[26rem] flex-col items-center justify-center gap-6 p-5">
-            {auction.status === "completed" ? (
-              <div className="text-center">
-                <h2 className="display text-4xl text-chalk-50">Asta terminata</h2>
-                <p className="mt-2 text-sm text-chalk-400">
-                  {state.history.length} giocatori assegnati.
-                </p>
-              </div>
-            ) : lot ? (
-              <>
-                <div className="anim-lot flex flex-col items-center gap-6 md:flex-row md:gap-10">
-                  <div className="flex flex-col items-center text-center">
-                    <PlayerPortrait player={lot.player} size={168} />
-                    <h2 className="display mt-3 text-4xl leading-none text-chalk-50 sm:text-5xl">
-                      {playerFullName(lot.player)}
-                    </h2>
-                    <p className="mt-2 flex items-center gap-2 text-sm text-chalk-200">
-                      <RoleBadge role={lot.player.role} />
-                      <span className="text-chalk-400">{ROLE_LABELS[lot.player.role]}</span>
-                      {lot.player.club && (
-                        <>
-                          <span aria-hidden className="text-chalk-600">·</span>
-                          <span className="font-medium">{lot.player.club}</span>
-                        </>
-                      )}
-                      {lot.player.quotation !== null && (
-                        <>
-                          <span aria-hidden className="text-chalk-600">·</span>
-                          <span className="text-gold-400 tabular">
-                            qt. {lot.player.quotation}
-                          </span>
-                        </>
-                      )}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col items-center gap-3">
-                    <CountdownRing
-                      remainingMs={remainingMs}
-                      totalMs={auction.bid_timer_seconds * 1000}
-                      paused={paused}
-                      size={190}
-                    />
-                    <div className="text-center">
-                      <p className="text-[10px] uppercase tracking-[0.25em] text-chalk-600">
-                        Offerta attuale
-                      </p>
-                      {/* La chiave sull'importo fa ripartire l'animazione a ogni rilancio */}
-                      <p
-                        key={lot.current_bid}
-                        className="anim-punch display text-6xl leading-none text-chalk-50 tabular"
-                      >
-                        {lot.current_bid}
-                      </p>
-                      <p className="display mt-1 truncate text-xl text-gold-400">
-                        {leaderTeam?.name ?? "—"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <BidControls
-                  lot={lot}
-                  myTeam={myTeam}
-                  minIncrement={auction.min_increment}
-                  paused={paused}
-                  busy={busy}
-                  onBid={handleBid}
-                />
-              </>
-            ) : (
-              <div className="w-full">
-                <NominationPanel
-                  auctionId={access.auctionId}
-                  isMyTurn={isMyTurn}
-                  turnTeamName={turnTeam?.name ?? null}
-                  busy={busy}
-                  onNominate={handleNominate}
-                />
-                {isMyTurn && nominationRemaining > 0 && (
-                  <p className="mt-3 text-center text-xs text-chalk-600 tabular">
-                    {Math.ceil(nominationRemaining / 1000)} secondi consigliati per scegliere
-                  </p>
-                )}
-              </div>
-            )}
-
-            <Alert className="w-full max-w-md">{message}</Alert>
-          </section>
-
-          <aside className="hidden flex-col gap-3 lg:flex">
-            {state.teams.slice(half).map((team) => (
-              <TeamTable
-                key={team.id}
-                team={team}
-                isLeader={leaderTeam?.id === team.id}
-                isTurn={turnTeam?.id === team.id}
-                isMine={myTeam?.id === team.id}
-                lastBid={lot?.current_bid}
-              />
-            ))}
-          </aside>
+          )}
         </div>
+      </header>
 
-        {/* Su telefono i tavoli scorrono sotto i controlli: il pollice deve
-            restare sul pulsante di offerta. */}
-        <div className="-mx-3 flex gap-3 overflow-x-auto px-3 pb-1 lg:hidden">
-          {state.teams.map((team) => (
-            <TeamTable
-              key={team.id}
-              team={team}
-              compact
-              isLeader={leaderTeam?.id === team.id}
-              isTurn={turnTeam?.id === team.id}
-              isMine={myTeam?.id === team.id}
-              lastBid={lot?.current_bid}
+      <div className="room-grid relative z-10 min-h-0 flex-1 px-3 pb-3 sm:px-5 sm:pb-5">
+        <aside className="room-side area-left min-h-0 flex-col gap-3 overflow-y-auto">
+          {tables(0, half)}
+        </aside>
+
+        <section className="area-stage spotlight flex min-h-0 flex-col items-center justify-center rounded-[var(--radius-card)] px-3 py-2">
+          {auction.status === "completed" ? (
+            <div className="text-center">
+              <h2 className="display text-chalk-50" style={{ fontSize: "var(--text-stage-name)" }}>
+                Asta terminata
+              </h2>
+              <p className="mt-2 text-chalk-400" style={{ fontSize: "var(--text-stage-meta)" }}>
+                {state.history.length} giocatori assegnati.
+              </p>
+            </div>
+          ) : lot ? (
+            <RoomStage
+              lot={lot}
+              leaderTeam={leaderTeam}
+              remainingMs={remainingMs}
+              totalMs={auction.bid_timer_seconds * 1000}
+              paused={paused}
             />
-          ))}
+          ) : (
+            <div className="flex w-full flex-col items-center">
+              <NominationPanel
+                auctionId={access.auctionId}
+                isMyTurn={isMyTurn}
+                turnTeamName={turnTeam?.name ?? null}
+                busy={busy}
+                onNominate={handleNominate}
+              />
+              {isMyTurn && nominationRemaining > 0 && (
+                <p
+                  className="mt-3 text-chalk-600 tabular"
+                  style={{ fontSize: "var(--text-label)" }}
+                >
+                  {Math.ceil(nominationRemaining / 1000)} secondi consigliati per scegliere
+                </p>
+              )}
+            </div>
+          )}
+        </section>
+
+        <aside className="room-side area-right min-h-0 flex-col gap-3 overflow-y-auto">
+          {tables(half, state.teams.length)}
+        </aside>
+
+        {/* Su telefono i tavoli scorrono di lato, sopra i controlli: il pollice
+            deve restare sul pulsante di offerta. */}
+        <div className="room-strip area-strip -mx-3 gap-2.5 overflow-x-auto px-3 pb-1">
+          {tables(0, state.teams.length, true)}
         </div>
-      </main>
+
+        <div className="area-bid flex flex-col items-center gap-2">
+          {lot && auction.status !== "completed" && (
+            <BidControls
+              lot={lot}
+              myTeam={myTeam}
+              minIncrement={auction.min_increment}
+              paused={paused}
+              busy={busy}
+              onBid={handleBid}
+            />
+          )}
+          <Alert className="w-full max-w-md">{message}</Alert>
+        </div>
+      </div>
+
+      <div className="vignette" aria-hidden />
+      <div className="grain" aria-hidden />
 
       {showCelebration && state.last_assigned && (
         <AssignedOverlay assigned={state.last_assigned} />
       )}
-    </>
+    </div>
   );
 }

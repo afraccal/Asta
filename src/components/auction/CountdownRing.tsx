@@ -2,32 +2,35 @@
 
 import { cn } from "@/lib/cn";
 
+const VIEWBOX = 100;
+const STROKE = 5.5;
+const RADIUS = (VIEWBOX - STROKE) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
 /**
- * Il countdown dell'asta (§7, §11).
+ * Il countdown (§7, §11).
  *
  * Non conta per conto proprio: riceve i millisecondi che mancano a una
- * scadenza decisa dal server. Il componente è isolato apposta, perché si
- * ri-renderizza dieci volte al secondo e non deve trascinarsi dietro il resto
- * della sala.
+ * scadenza decisa dal server. Il componente e' isolato apposta, perche' si
+ * ridisegna dieci volte al secondo e non deve trascinarsi dietro la sala.
+ *
+ * L'SVG usa un viewBox fisso e si dimensiona dal CSS: cosi' l'anello cresce
+ * insieme a tutto il resto quando la sala finisce su un televisore.
  */
 export function CountdownRing({
   remainingMs,
   totalMs,
   paused,
-  size = 200,
+  className,
 }: {
   remainingMs: number;
   totalMs: number;
   paused?: boolean;
-  size?: number;
+  className?: string;
 }) {
   const seconds = Math.ceil(remainingMs / 1000);
   const fraction = totalMs > 0 ? Math.min(1, Math.max(0, remainingMs / totalMs)) : 0;
   const critical = !paused && remainingMs <= 3000 && remainingMs > 0;
-
-  const stroke = size * 0.055;
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
 
   const color = paused
     ? "var(--color-chalk-400)"
@@ -37,44 +40,48 @@ export function CountdownRing({
 
   return (
     <div
-      className={cn("relative", critical && "anim-alarm")}
-      style={{ width: size, height: size }}
+      className={cn("relative aspect-square", critical && "anim-alarm", className)}
+      style={{ width: "var(--size-ring)" }}
       role="timer"
       aria-label={paused ? "Asta in pausa" : `${seconds} secondi rimanenti`}
     >
-      <svg width={size} height={size} className="-rotate-90" aria-hidden>
+      <svg viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`} className="size-full -rotate-90" aria-hidden>
         <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
+          cx={VIEWBOX / 2}
+          cy={VIEWBOX / 2}
+          r={RADIUS}
           fill="none"
           stroke="var(--color-pitch-700)"
-          strokeWidth={stroke}
+          strokeWidth={STROKE}
         />
-        {/* Nessuna transizione CSS: la posizione arriva già calcolata a ogni
+        {/* Nessuna transizione CSS: la posizione arriva gia' calcolata a ogni
             frame, interpolarla la farebbe restare indietro rispetto al server. */}
         <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
+          cx={VIEWBOX / 2}
+          cy={VIEWBOX / 2}
+          r={RADIUS}
           fill="none"
           stroke={color}
-          strokeWidth={stroke}
+          strokeWidth={STROKE}
           strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - fraction)}
+          strokeDasharray={CIRCUMFERENCE}
+          strokeDashoffset={CIRCUMFERENCE * (1 - fraction)}
         />
       </svg>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="display tabular leading-none" style={{ fontSize: size * 0.42, color }}>
-          {paused ? "‖" : seconds}
+        <span
+          className="display leading-none tabular"
+          style={{ fontSize: "calc(var(--size-ring) * 0.42)", color }}
+        >
+          {paused ? "II" : seconds}
         </span>
-        {!paused && (
-          <span className="text-xs uppercase tracking-[0.2em] text-chalk-600">
-            second{seconds === 1 ? "o" : "i"}
-          </span>
-        )}
+        <span
+          className="uppercase tracking-[0.25em] text-chalk-600"
+          style={{ fontSize: "var(--text-label)" }}
+        >
+          {paused ? "in pausa" : seconds === 1 ? "secondo" : "secondi"}
+        </span>
       </div>
     </div>
   );

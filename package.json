@@ -18,6 +18,7 @@
     "test:all": "npm run test && npm run test:db"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.109.0",
     "clsx": "^2.1.1",

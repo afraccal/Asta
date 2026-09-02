@@ -56,14 +56,14 @@ export function BidControls({
   const canBid = blocked === null && !busy;
 
   return (
-    <div className="w-full max-w-md space-y-3">
+    <div className="w-full max-w-md space-y-1.5">
       <div className="flex items-stretch gap-2">
         <button
           type="button"
           aria-label="Diminuisci"
           disabled={!canBid || amount <= minimum}
           onClick={() => setTyped(Math.max(minimum, amount - 1))}
-          className="display h-14 w-14 shrink-0 rounded-xl bg-pitch-800 text-2xl text-chalk-200 transition hover:bg-pitch-700 disabled:opacity-40"
+          className="display h-12 w-12 shrink-0 rounded-[var(--radius-inner)] bg-pitch-800 text-2xl text-chalk-200 transition hover:bg-pitch-700 active:scale-95 disabled:opacity-40"
         >
           −
         </button>
@@ -78,7 +78,7 @@ export function BidControls({
             disabled={!canBid}
             onChange={(e) => setTyped(Number(e.target.value))}
             className={cn(
-              "display h-14 w-full rounded-xl border border-pitch-600 bg-pitch-900",
+              "display h-12 w-full rounded-[var(--radius-inner)] border border-pitch-600 bg-pitch-900",
               "text-center text-3xl text-chalk-50 tabular",
               "focus:border-gold-400 focus:outline-none focus:ring-2 focus:ring-gold-400/25",
               "disabled:opacity-50 [appearance:textfield]",
@@ -92,7 +92,7 @@ export function BidControls({
           aria-label="Aumenta"
           disabled={!canBid || amount >= maxBid}
           onClick={() => setTyped(Math.min(maxBid, amount + 1))}
-          className="display h-14 w-14 shrink-0 rounded-xl bg-pitch-800 text-2xl text-chalk-200 transition hover:bg-pitch-700 disabled:opacity-40"
+          className="display h-12 w-12 shrink-0 rounded-[var(--radius-inner)] bg-pitch-800 text-2xl text-chalk-200 transition hover:bg-pitch-700 active:scale-95 disabled:opacity-40"
         >
           +
         </button>
@@ -110,7 +110,7 @@ export function BidControls({
                 setTyped(value);
                 onBid(value);
               }}
-              className="display h-11 flex-1 rounded-xl bg-pitch-800 text-lg text-chalk-100 transition hover:bg-pitch-700 disabled:opacity-40"
+              className="display h-9 flex-1 rounded-[var(--radius-inner)] bg-pitch-800 text-lg text-chalk-100 transition hover:bg-pitch-700 active:scale-95 disabled:opacity-40"
             >
               +{step}
             </button>
@@ -119,9 +119,9 @@ export function BidControls({
       </div>
 
       <Button
-        variant="gold"
+        variant={blocked ? "ghost" : "gold"}
         size="lg"
-        className="w-full text-xl"
+        className="h-12 w-full text-xl"
         loading={busy}
         disabled={!canBid}
         onClick={() => onBid(amount)}
@@ -129,7 +129,7 @@ export function BidControls({
         {blocked ? "Offerta non disponibile" : `Offri ${amount}`}
       </Button>
 
-      <p className="min-h-[1.25rem] text-center text-xs text-chalk-400">
+      <p className="min-h-[1rem] text-center text-[11px] leading-4 text-chalk-400">
         {blocked ?? (myTeam ? `Puoi arrivare a ${maxBid} crediti.` : "")}
       </p>
     </div>

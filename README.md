@@ -3,7 +3,7 @@
 Sala d'asta virtuale per il fantacalcio tra amici. Piu' partecipanti si
 collegano da PC o smartphone alla stessa stanza e fanno l'asta in tempo reale.
 
-**Stato:** Fasi 1-4 di 8 completate. L'asta si gioca.
+**Stato:** Fasi 1-4 e 6 di 8 completate. L'asta si gioca, e si guarda.
 
 ---
 
@@ -38,7 +38,7 @@ npm run test:all      # tutto: parser, integrazione, ciclo asta, concorrenza
 
 ---
 
-## Le quattro decisioni che reggono tutto il progetto
+## Le cinque decisioni che reggono tutto il progetto
 
 ### 1. La logica critica sta nel database, non in TypeScript
 
@@ -96,7 +96,30 @@ timer al massimo rallenta, non si ferma; e siccome il numero si ricalcola
 sempre dalla scadenza assoluta, un rallentamento non lascia mai indietro nulla:
 al primo render successivo il valore è già quello giusto.
 
-### 4. Realtime via Broadcast, con rilevamento dei buchi
+### 4. La sala si adatta alla forma dello schermo, non alla larghezza
+
+La stessa schermata viene guardata a 40 cm su un telefono e a 3 metri su un
+televisore. Le misure sono quindi legate alla finestra, non fissate in pixel:
+`clamp(min, min(vw, vh), max)`. Il `min(vw, vh)` non e' un vezzo, e' la
+correzione di un difetto vero: con le sole `vw`, un portatile collegato alla TV
+(1280x720, largo ma basso) faceva sfondare il palco in verticale e spingeva i
+controlli di offerta fuori campo.
+
+Anche la disposizione cambia con l'**altezza**, non con la larghezza:
+
+- schermo alto (televisore, telefono) -> tavoli ai lati del palco, come
+  seduti attorno a un tavolo, e composizione del palco a due fasce;
+- schermo largo ma basso -> tavoli in una striscia orizzontale in fondo, palco
+  a tutta larghezza con le due fasce affiancate.
+
+Otto tavoli in colonna vogliono altezza, non larghezza: sceglierne la
+disposizione guardando solo la larghezza e' quello che tagliava il pulsante
+d'offerta su un portatile.
+
+Il pulsante d'offerta e' l'ultima cosa che puo' sparire dallo schermo: su
+telefono sta in fondo, dove arriva il pollice.
+
+### 5. Realtime via Broadcast, con rilevamento dei buchi
 
 Un trigger su `auction_events` emette un messaggio sul topic
 `auction:<id>` (canale privato, accesso filtrato dalle RLS su
@@ -166,7 +189,7 @@ src/
     lobby/                    InviteBar, TeamSlot
     listone/ImportPreview.tsx anteprima con mappatura colonne e segnalazioni
     player/                   PlayerPortrait, PlayerCard, PlayerSearch
-    auction/                  CountdownRing, BidControls, TeamTable,
+    auction/                  RoomStage, CountdownRing, BidControls, TeamTable,
                               NominationPanel, AssignedOverlay, RoomChrome
     NicknameGate.tsx          per chi apre il link senza passare dalla home
   lib/
@@ -212,6 +235,33 @@ supabase/
 
 ---
 
+## La sala
+
+Non una pagina scura, una stanza: una pozza di luce sul palco, i tavoli in
+penombra intorno, i bordi che si spengono. La gerarchia la fa la luce, cosi'
+regge anche vista da lontano.
+
+Il colore dice tre cose e nient'altro. **Oro** = questo tavolo e' in testa
+all'offerta. **Verde** = tocca a lui chiamare. **Bordo chiaro** = sei tu.
+Nessuna decorazione: se un elemento e' colorato, quel colore significa
+qualcosa.
+
+I tavoli hanno gia' il formato 4:3 nelle postazioni degli allenatori: nella
+fase 7 la webcam prendera' il posto dell'avatar senza spostare un pixel.
+
+Il pulsante **TV** in alto a destra toglie di mezzo il contorno e ingrandisce
+il palco. Non ingrandisce i tavoli: farlo spingeva fuori schermo l'ottavo
+tavolo e il pulsante d'offerta, cioe' proprio quello che si vuole vedere
+meglio.
+
+Le animazioni sono sei, ognuna dice qualcosa: entrata del giocatore chiamato,
+battito del numero a ogni rilancio, lampo sul tavolo che passa in testa,
+pulsazione rossa sotto i tre secondi, aggiudicazione, cambio turno. Tutte solo
+su `transform` e `opacity`, e tutte spente per chi ha chiesto meno animazioni
+al sistema.
+
+---
+
 ## Roadmap
 
 | Fase | Contenuto | Stato |
@@ -222,6 +272,6 @@ supabase/
 | 3 | Offerte, crediti, timer, assegnazione | ✅ |
 | 4 | Realtime, riconnessioni | ✅ |
 | 5 | Storico, turni, pausa/ripresa, chiusura | 🟡 turni e pausa fatti; manca lo storico in sala |
-| 6 | Sala d'asta, tavoli, animazioni, modalita' TV | ⬜ |
+| 6 | Sala d'asta, tavoli, animazioni, modalità TV | ✅ |
 | 7 | Videochiamata (LiveKit, isolata dall'asta) | ⬜ |
 | 8 | Test E2E multi-utente, hardening, deploy | ⬜ |

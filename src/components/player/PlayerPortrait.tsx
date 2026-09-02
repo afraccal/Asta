@@ -24,6 +24,8 @@ export function PlayerPortrait({
   className,
 }: {
   player: PortraitPlayer;
+  /** Lato in pixel. Passa 0 per dimensionarlo dal CSS (serve alla sala,
+   *  dove la foto deve crescere insieme al resto su un televisore). */
   size?: number;
   className?: string;
 }) {
@@ -34,10 +36,10 @@ export function PlayerPortrait({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl ring-1 ring-pitch-600",
+        "relative aspect-square overflow-hidden rounded-[var(--radius-card)] ring-1 ring-pitch-600 [container-type:inline-size]",
         className,
       )}
-      style={{ width: size, height: size }}
+      style={size > 0 ? { width: size, height: size } : undefined}
     >
       <div
         aria-hidden
@@ -57,7 +59,7 @@ export function PlayerPortrait({
       ) : (
         <span
           className="display relative flex size-full items-center justify-center"
-          style={{ color, fontSize: size * 0.36 }}
+          style={{ color, fontSize: size > 0 ? size * 0.36 : "36cqw" }}
           aria-hidden
         >
           {playerInitials(player)}

@@ -2,111 +2,164 @@
 
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/ui/Avatar";
-import type { Team } from "@/lib/types";
+import { ROLE_COLORS, type Team } from "@/lib/types";
 
 /**
  * Il tavolo di una squadra (§12).
  *
- * Il bordo racconta lo stato senza bisogno di leggere: oro se la squadra è in
- * testa all'offerta, verde se tocca a lei chiamare. I due riquadri dei
- * partecipanti sono già dimensionati per ospitare le webcam della fase 7:
- * quando arriveranno prenderanno il posto degli avatar senza cambiare il
- * layout del tavolo.
+ * Costruito come un tavolo vero: targhetta col nome in alto, una o due
+ * postazioni per gli allenatori, e sotto i numeri che contano. Le postazioni
+ * hanno gia' il formato 4:3 del video: nella fase 7 la webcam prendera' il
+ * posto dell'avatar senza muovere di un pixel il resto del tavolo.
+ *
+ * Tre stati, tre significati, nessun colore decorativo:
+ * oro = e' in testa all'offerta, verde = tocca a lei chiamare,
+ * bordo chiaro = e' la tua.
  */
 export function TeamTable({
   team,
   isLeader,
   isTurn,
   isMine,
-  lastBid,
   compact,
 }: {
   team: Team;
   isLeader: boolean;
   isTurn: boolean;
   isMine: boolean;
-  lastBid?: number | null;
   compact?: boolean;
 }) {
+  const seats = Math.max(1, team.members.length);
+  const recent = compact ? [] : team.players.slice(0, 2);
+
   return (
     <article
       className={cn(
-        "surface flex flex-col gap-2 p-3 transition-[border-color,box-shadow] duration-300",
-        isLeader && "border-gold-400/80 anim-flash",
-        !isLeader && isTurn && "border-turn-400/70",
-        !isLeader && !isTurn && isMine && "border-brand-500/60",
-        compact && "min-w-[10.5rem]",
+        "felt flex flex-col overflow-hidden transition-[border-color,box-shadow] duration-500",
+        isLeader && "table-leader",
+        !isLeader && isTurn && "table-turn",
+        !isLeader && !isTurn && isMine && "table-mine",
+        compact ? "min-w-[8.5rem] flex-1" : "flex-1",
       )}
     >
-      <header className="flex items-baseline justify-between gap-2">
+      <header className="nameplate flex items-center gap-2 px-2.5 py-1.5">
         <h3
-          className={cn(
-            "display truncate text-lg leading-tight",
-            isLeader ? "text-gold-400" : "text-chalk-50",
-          )}
+          className="display min-w-0 flex-1 truncate leading-none"
+          style={{ fontSize: "var(--text-table-name)" }}
           title={team.name}
         >
-          {team.name}
+          <span className={isLeader ? "text-gold-400" : "text-chalk-50"}>{team.name}</span>
         </h3>
         {isTurn && (
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-turn-400">
+          <span
+            className="anim-turn shrink-0 font-semibold uppercase tracking-wider text-turn-400"
+            style={{ fontSize: "var(--text-label)" }}
+          >
             chiama
           </span>
         )}
       </header>
 
-      {/* Postazioni degli allenatori: 1 o 2, con lo spazio per il video */}
-      <div className="flex gap-2">
-        {Array.from({ length: Math.max(1, team.members.length) }).map((_, index) => {
-          const member = team.members[index];
-          return (
-            <div
-              key={member?.profile_id ?? `vuoto-${index}`}
-              className="flex flex-1 flex-col items-center gap-1 rounded-lg bg-pitch-900/60 py-2"
-            >
-              {member ? (
-                <>
-                  <Avatar name={member.display_name} src={member.avatar_url} online={member.online} size={30} />
-                  <span className="max-w-full truncate px-1 text-[11px] text-chalk-400">
-                    {member.display_name}
+      <div className="flex flex-1 flex-col gap-1.5 p-2">
+        {/* Postazioni: spazio gia' pronto per la webcam della fase 7 */}
+        <div className="flex gap-2">
+          {Array.from({ length: seats }).map((_, index) => {
+            const member = team.members[index];
+            return (
+              <div
+                key={member?.profile_id ?? `posto-${index}`}
+                className="relative flex h-[clamp(2.5rem,6.5vh,6.5rem)] flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-[var(--radius-inner)] bg-pitch-950/60 ring-1 ring-inset ring-white/[0.06]"
+              >
+                {member ? (
+                  <>
+                    <Avatar
+                      name={member.display_name}
+                      src={member.avatar_url}
+                      online={member.online}
+                      size={compact ? 26 : 30}
+                    />
+                    <span
+                      className="max-w-full truncate px-1.5 text-chalk-300"
+                      style={{ fontSize: "var(--text-label)" }}
+                    >
+                      {member.display_name}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-chalk-600" style={{ fontSize: "var(--text-label)" }}>
+                    posto libero
                   </span>
-                </>
-              ) : (
-                <span className="py-2 text-[11px] text-chalk-600">libero</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <dl className="flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            <dd
+              className={cn(
+                "display leading-none tabular",
+                team.credits_remaining === 0 ? "text-alarm-400" : "text-chalk-50",
               )}
-            </div>
-          );
-        })}
-      </div>
+              style={{ fontSize: "var(--text-table-num)" }}
+            >
+              {team.credits_remaining}
+            </dd>
+            <dt
+              className="uppercase tracking-wider text-chalk-600"
+              style={{ fontSize: "var(--text-label)" }}
+            >
+              crediti
+            </dt>
+          </div>
+          <div className="min-w-0 text-right">
+            <dd
+              className="display leading-none text-chalk-300 tabular"
+              style={{ fontSize: "var(--text-table-num)" }}
+            >
+              {team.players_count}
+            </dd>
+            <dt
+              className="uppercase tracking-wider text-chalk-600"
+              style={{ fontSize: "var(--text-label)" }}
+            >
+              in rosa
+            </dt>
+          </div>
+        </dl>
 
-      <dl className="flex items-end justify-between">
-        <div>
-          <dt className="text-[10px] uppercase tracking-wider text-chalk-600">Crediti</dt>
-          <dd
-            className={cn(
-              "display text-2xl leading-none tabular",
-              team.credits_remaining === 0 ? "text-alarm-400" : "text-chalk-50",
+        {/* Ultimi acquisti: il tavolo racconta cosa ha gia' preso (§12) */}
+        {!compact && recent.length > 0 && (
+          <ul className="mt-auto space-y-0.5 border-t border-white/[0.06] pt-1.5">
+            {recent.map((player) => (
+              <li
+                key={player.player_id}
+                className="flex items-baseline gap-1.5 text-chalk-400"
+                style={{ fontSize: "var(--text-label)" }}
+              >
+                <span
+                  className="display shrink-0"
+                  style={{ color: ROLE_COLORS[player.role] }}
+                  aria-hidden
+                >
+                  {player.role}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{player.last_name}</span>
+                <span className="shrink-0 text-chalk-500 tabular">{player.price}</span>
+              </li>
+            ))}
+            {team.players_count > recent.length && (
+              <li
+                className="pt-0.5 text-chalk-600"
+                style={{ fontSize: "var(--text-label)" }}
+              >
+                e altri {team.players_count - recent.length}
+              </li>
             )}
-          >
-            {team.credits_remaining}
-          </dd>
-        </div>
-        <div className="text-right">
-          <dt className="text-[10px] uppercase tracking-wider text-chalk-600">Rosa</dt>
-          <dd className="display text-2xl leading-none text-chalk-200 tabular">
-            {team.players_count}
-          </dd>
-        </div>
-      </dl>
-
-      {isLeader && lastBid != null && (
-        <p className="rounded-lg bg-gold-400/15 py-1 text-center">
-          <span className="display text-lg text-gold-400 tabular">{lastBid}</span>
-          <span className="ml-1 text-[10px] uppercase tracking-wider text-gold-400/80">
-            in testa
-          </span>
-        </p>
-      )}
+          </ul>
+        )}
+      </div>
     </article>
   );
 }

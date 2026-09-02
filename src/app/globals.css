@@ -38,11 +38,37 @@
   --color-role-c: #6E93FF;
   --color-role-a: #FF7A6B;
 
+  /* ---------------------------------------------------------------------
+     Scala tipografica fluida.
+     Il vincolo che comanda questo progetto e' la distanza: la stessa
+     schermata viene guardata a 40 cm su un telefono e a 3 metri su una TV.
+     Le taglie sono legate alla larghezza della finestra, cosi' su un
+     televisore da 1920px i numeri crescono davvero invece di restare
+     "grandi da desktop", cioe' illeggibili dal divano.
+
+     Gli elementi del palco guardano la larghezza E l'altezza, con min(): uno
+     schermo largo ma basso (un portatile collegato alla TV, 1280x720) e' il
+     caso in cui il palco sfondava in verticale e i controlli di offerta
+     finivano fuori campo.
+     --------------------------------------------------------------------- */
+  --text-stage-name:  clamp(2rem,    min(5vw, 8vh),    6.5rem);
+  --text-stage-bid:   clamp(2.5rem,  min(7.5vw, 11vh), 10rem);
+  --text-stage-meta:  clamp(0.8rem,  min(1.2vw, 2vh),  1.75rem);
+  --text-table-name:  clamp(0.95rem, 1.1vw,  2rem);
+  --text-table-num:   clamp(1.35rem, 1.8vw,  3.25rem);
+  --text-label:       clamp(0.6rem,  0.62vw, 1.05rem);
+
+  --size-ring:        clamp(7rem,   min(15vw, 21vh), 21rem);
+  --size-portrait:    clamp(4.5rem, min(11vw, 14vh), 15rem);
+
   --font-sans:    var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono:    var(--font-geist-mono), ui-monospace, monospace;
   --font-display: var(--font-display), "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
 
-  --radius-card: 1rem;
+  /* Sistema dei raggi, una regola sola per tutta l'app:
+     contenitori 16px, superfici interne 12px, pastiglie e avatar tondi. */
+  --radius-card:  1rem;
+  --radius-inner: 0.75rem;
 }
 
 @layer base {
@@ -140,4 +166,217 @@
   .anim-alarm    { animation: alarm-pulse 700ms ease-in-out infinite; }
   .anim-assigned { animation: assigned-enter 420ms cubic-bezier(0.16, 1, 0.3, 1); }
   .anim-rise     { animation: rise-fade 340ms ease-out both; }
+}
+
+/* ===========================================================================
+   LA SALA
+   L'idea non e' "una pagina scura" ma una stanza: una pozza di luce sul palco
+   al centro, i tavoli in penombra intorno, i bordi che si spengono. La
+   gerarchia la fa la luce, non il colore, cosi' regge anche vista da lontano.
+   =========================================================================== */
+
+@layer components {
+  /* Pozza di luce sul palco. E' dietro tutto e non intercetta il puntatore. */
+  .room-light::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(58% 46% at 50% 34%, #22304F 0%, transparent 64%),
+      radial-gradient(90% 70% at 50% 120%, #0D1526 0%, transparent 70%);
+  }
+
+  /* I bordi si spengono: l'occhio finisce al centro senza doverci pensare. */
+  .vignette {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    pointer-events: none;
+    background: radial-gradient(115% 95% at 50% 45%, transparent 52%, #04060C 100%);
+  }
+
+  /* Grana pellicola: toglie la piattezza del gradiente puro.
+     Fissa e pointer-events:none, mai su un contenitore che scorre,
+     altrimenti la GPU ridisegna a ogni frame. */
+  .grain {
+    position: fixed;
+    inset: 0;
+    z-index: 31;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Il tavolo: panno verde scurissimo con una luce che cade da sopra. */
+  .felt {
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.045) 0%, transparent 38%),
+      linear-gradient(168deg, #14202B 0%, #0E1720 100%);
+    border: 1px solid var(--color-pitch-700);
+    border-radius: var(--radius-card);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 14px 40px -18px #000;
+  }
+
+  /* Targhetta col nome della squadra, come su un tavolo vero. */
+  .nameplate {
+    background: linear-gradient(180deg, #1E2B3A 0%, #16212D 100%);
+    border-bottom: 1px solid rgb(255 255 255 / 0.07);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+
+  /* Stati del tavolo. Sono tre soli e vogliono dire tre cose precise:
+     oro = e' in testa all'offerta, verde = tocca a lei chiamare,
+     bordo chiaro = sei tu. Nessun colore decorativo. */
+  .table-leader {
+    border-color: color-mix(in oklab, var(--color-gold-400) 70%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 0 0 1px color-mix(in oklab, var(--color-gold-400) 30%, transparent),
+      0 12px 46px -14px color-mix(in oklab, var(--color-gold-400) 45%, transparent);
+  }
+
+  .table-turn {
+    border-color: color-mix(in oklab, var(--color-turn-400) 60%, transparent);
+  }
+
+  .table-mine {
+    border-color: color-mix(in oklab, var(--color-chalk-200) 45%, transparent);
+  }
+
+  /* Il palco: il giocatore in asta sta dentro un cono di luce. */
+  .spotlight {
+    background:
+      radial-gradient(72% 58% at 50% 22%, rgb(255 255 255 / 0.05) 0%, transparent 68%);
+  }
+}
+
+@keyframes turn-sweep {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+@layer components {
+  .anim-turn { animation: turn-sweep 420ms cubic-bezier(0.16, 1, 0.3, 1); transform-origin: left; }
+}
+
+/* ---------------------------------------------------------------------------
+   Impianto della sala.
+   Aree nominate perche' l'ordine cambia fra telefono e televisore: su schermo
+   piccolo i controlli di offerta finiscono in fondo, dove arriva il pollice;
+   su schermo largo stanno sotto il palco, fra i due lati di tavoli.
+   Una sola istanza dei componenti, nessuna duplicazione di markup.
+   --------------------------------------------------------------------------- */
+@layer components {
+  .room-grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-areas: "stage" "strip" "bid";
+    grid-template-rows: minmax(0, 1fr) auto auto;
+  }
+
+  /* I tavoli ai lati del palco hanno senso solo se ci stanno davvero: otto
+     tavoli in colonna vogliono altezza, non larghezza. Sotto la soglia si
+     passa alla striscia orizzontale, che lascia al palco tutta la larghezza
+     invece di spremere tutto e tagliare i controlli di offerta.
+     La soglia e' fissata sull'altezza utile di un televisore 1080p. */
+  .room-side  { display: none; }
+  .room-strip { display: flex; }
+
+  @media (min-width: 1024px) and (min-height: 860px) {
+    .room-grid {
+      gap: 0.875rem;
+      grid-template-areas:
+        "left stage right"
+        "left bid   right";
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2.6fr) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto;
+    }
+    .room-side  { display: flex; }
+    .room-strip { display: none; }
+
+  }
+
+  .area-left  { grid-area: left; }
+  .area-stage { grid-area: stage; }
+  .area-right { grid-area: right; }
+  .area-bid   { grid-area: bid; }
+  .area-strip { grid-area: strip; }
+
+  /* Modalita' TV: si toglie di mezzo tutto il contorno e si alza la scala.
+     Serve quando la sala e' collegata a un televisore e guardata da lontano. */
+  /* Modalita' TV: si toglie di mezzo il contorno e cresce IL PALCO.
+     I tavoli restano come sono: ingrandire anche quelli faceva uscire dallo
+     schermo l'ottavo tavolo e il pulsante di offerta, che e' esattamente
+     cio' che la modalita' TV dovrebbe rendere piu' visibile, non meno. */
+  .tv-mode {
+    --text-stage-name: clamp(3rem,   min(6.5vw, 14vh), 9rem);
+    --text-stage-bid:  clamp(3.5rem, min(9.5vw, 20vh), 15rem);
+    --text-stage-meta: clamp(1rem,   min(1.8vw, 2.8vh), 2.5rem);
+    --size-ring:       clamp(9rem,   min(16vw, 30vh), 26rem);
+    --size-portrait:   clamp(6rem,   min(11vw, 22vh), 19rem);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   La composizione del palco segue la forma dello schermo, non una regola fissa.
+
+   Schermo alto (televisore, telefono): due fasce impilate, il nome del
+   giocatore ha una riga tutta sua e non va mai a capo.
+   Schermo largo ma basso (un portatile collegato alla TV): le due fasce si
+   affiancano, cosi' il palco usa la larghezza che avanza invece di sfondare
+   in altezza e spingere fuori campo i controlli di offerta.
+   --------------------------------------------------------------------------- */
+@layer components {
+  .stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.75rem, 2.5vh, 2rem);
+    width: 100%;
+  }
+
+  .stage-who {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .stage-bid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1rem, 4vw, 4rem);
+    min-width: 0;
+  }
+
+  @media (min-width: 1024px) and (max-height: 859px) {
+    .stage {
+      flex-direction: row;
+      justify-content: center;
+      gap: clamp(1.5rem, 4vw, 4.5rem);
+    }
+    .stage-who,
+    .stage-bid {
+      flex: 1 1 0;
+    }
+    .stage-bid {
+      justify-content: flex-start;
+    }
+  }
+}
+
+/* Schermo alto e largo: la striscia di tavoli sparisce e il palco eredita il
+   suo spazio. Su un televisore conviene spenderlo, non lasciarlo vuoto. */
+@media (min-width: 1024px) and (min-height: 860px) {
+  :root {
+    --text-stage-name: clamp(2.5rem, min(5.5vw, 12vh), 7.5rem);
+    --text-stage-bid:  clamp(3rem,   min(8vw, 17vh),   13rem);
+    --size-ring:       clamp(9rem,   min(14vw, 26vh),  23rem);
+    --size-portrait:   clamp(6rem,   min(9.5vw, 19vh), 17rem);
+  }
 }

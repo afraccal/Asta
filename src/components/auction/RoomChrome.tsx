@@ -81,7 +81,7 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        "rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider",
+        "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider sm:text-xs",
         status === "paused" && "bg-gold-400/15 text-gold-400",
         status === "running" && "bg-turn-400/15 text-turn-400",
         status === "completed" && "bg-pitch-700 text-chalk-400",
