@@ -9,8 +9,15 @@ import type { Player } from "@/lib/types";
 /**
  * Il momento della chiamata (§5).
  *
- * Chi è di turno cerca e sceglie; tutti gli altri vedono solo di chi si sta
- * aspettando la mossa, senza una lista che li distragga.
+ * Il listone lo vedono tutti, sempre. Prima lo vedeva solo chi era di turno e
+ * gli altri restavano davanti a una scritta: non potevano controllare chi
+ * fosse ancora libero, ne' prepararsi la mossa successiva. In un'asta vera
+ * tutti tengono il listone sotto gli occhi; a essere riservata e' la chiamata,
+ * non la consultazione.
+ *
+ * Chiamare resta quindi legato al turno: chi non e' di turno puo' cercare e
+ * scegliere un giocatore, ma il pulsante glielo dice chiaramente che tocca a
+ * un altro.
  */
 export function NominationPanel({
   auctionId,
@@ -27,27 +34,25 @@ export function NominationPanel({
 }) {
   const [selected, setSelected] = useState<Player | null>(null);
 
-  if (!isMyTurn) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-10 text-center">
-        <span className="size-2.5 animate-pulse rounded-full bg-turn-400" />
-        <p className="display text-3xl text-chalk-50">{turnTeamName ?? "…"}</p>
-        <p className="text-sm text-chalk-400">sta scegliendo il prossimo giocatore</p>
-      </div>
-    );
-  }
-
   return (
     <div className="grid w-full gap-5 lg:grid-cols-[minmax(0,22rem)_1fr]">
       <div className="flex max-h-[26rem] min-h-0 flex-col">
-        <p className="mb-2 text-xs uppercase tracking-[0.2em] text-turn-400">
-          Tocca a te: chiama un giocatore
-        </p>
+        {isMyTurn ? (
+          <p className="mb-2 text-xs uppercase tracking-[0.2em] text-turn-400">
+            Tocca a te: chiama un giocatore
+          </p>
+        ) : (
+          <p className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-chalk-400">
+            <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-turn-400" />
+            Sta scegliendo {turnTeamName ?? "…"}
+          </p>
+        )}
+
         <PlayerSearch
           auctionId={auctionId}
           onSelect={setSelected}
           selectedId={selected?.id}
-          autoFocus
+          autoFocus={isMyTurn}
         />
       </div>
 
@@ -56,20 +61,21 @@ export function NominationPanel({
           <>
             <PlayerCard player={selected} compact />
             <Button
-              variant="gold"
+              variant={isMyTurn ? "gold" : "ghost"}
               size="lg"
               className="w-full max-w-xs text-lg"
               loading={busy}
-              disabled={busy}
+              disabled={busy || !isMyTurn}
               onClick={() => onNominate(selected)}
             >
-              Metti all&apos;asta
+              {isMyTurn ? "Metti all'asta" : `Tocca a ${turnTeamName ?? "un'altra squadra"}`}
             </Button>
           </>
         ) : (
           <p className="max-w-xs text-center text-sm text-chalk-600">
-            Cerca il giocatore da chiamare. L&apos;asta partirà da 1 credito e sarà
-            già tua finché qualcuno non rilancia.
+            {isMyTurn
+              ? "Cerca il giocatore da chiamare. L'asta partirà da 1 credito e sarà già tua finché qualcuno non rilancia."
+              : "Puoi guardare il listone e preparare la tua mossa: chiamare toccherà a te al tuo turno."}
           </p>
         )}
       </div>

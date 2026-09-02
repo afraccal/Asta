@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { MicrophoneSlash } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/ui/Avatar";
 import { useStaParlando, useVideo } from "@/components/video/VideoProvider";
@@ -30,6 +31,10 @@ export function VideoTile({
   const staParlando = useStaParlando(profileId);
   const riferimento = useRef<HTMLVideoElement>(null);
   const traccia = video?.traccia(profileId) ?? null;
+  // Lo stato del microfono si mostra solo a videochiamata attiva: fuori da
+  // quel contesto non vorrebbe dire niente.
+  const inVideo = video?.stato === "acceso";
+  const microfonoChiuso = inVideo && !video.microfonoAperto(profileId);
 
   useEffect(() => {
     const elemento = riferimento.current;
@@ -54,6 +59,15 @@ export function VideoTile({
           : "ring-white/[0.06]",
       )}
     >
+      {microfonoChiuso && (
+        <span
+          className="absolute right-1 top-1 z-10 flex size-4 items-center justify-center rounded-full bg-pitch-950/80 text-chalk-400"
+          title={`${nome} ha il microfono spento`}
+        >
+          <MicrophoneSlash size={10} weight="bold" />
+        </span>
+      )}
+
       {traccia ? (
         <>
           <video

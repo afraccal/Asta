@@ -32,9 +32,8 @@
   ],
   "exclude": [
     "node_modules",
-    ".next/types/** 2.ts",
-    ".next/types/**/* 2.ts",
-    "**/* 2.ts",
-    "**/* 2.tsx"
+    "**/* [0-9].ts",
+    "**/* [0-9].tsx",
+    "**/* [0-9][0-9].ts"
   ]
 }

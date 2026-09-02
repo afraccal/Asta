@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  VideoCamera, VideoCameraSlash, Microphone, MicrophoneSlash, PhoneX,
+  VideoCamera, VideoCameraSlash, Microphone, MicrophoneSlash, PhoneX, SpeakerSimpleX,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { useVideo } from "@/components/video/VideoProvider";
@@ -20,7 +20,7 @@ export function VideoControls() {
   const video = useVideo();
   if (!video) return null;
 
-  const { stato, errore, micAcceso, camAccesa, collegati } = video;
+  const { stato, errore, micAcceso, camAccesa, audioBloccato, collegati } = video;
 
   if (stato === "spento" || stato === "errore") {
     return (
@@ -59,6 +59,27 @@ export function VideoControls() {
 
   return (
     <div className="flex items-center gap-1.5">
+      {/* Alcuni browser non fanno partire l'audio finche' non lo si chiede
+          esplicitamente. Senza questo pulsante si resterebbe in silenzio
+          senza capire perche'. */}
+      {audioBloccato && (
+        <button
+          type="button"
+          onClick={() => void video.sbloccaAudio()}
+          title="Il browser sta bloccando l'audio: tocca per sentire gli altri"
+          className={cn(BOTTONE, "animate-pulse bg-gold-400 text-pitch-950")}
+        >
+          <SpeakerSimpleX size={18} weight="bold" />
+          <span className="sr-only">Attiva l&apos;audio</span>
+        </button>
+      )}
+
+      {errore && (
+        <span className="max-w-[10rem] truncate text-[11px] text-alarm-400" title={errore}>
+          {errore}
+        </span>
+      )}
+
       {collegati > 1 && (
         <span className="hidden text-[11px] text-chalk-600 tabular sm:inline">
           {collegati} in video

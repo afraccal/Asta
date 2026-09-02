@@ -4,7 +4,10 @@ import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
   useSyncExternalStore,
 } from "react";
-import type { LocalParticipant, RemoteTrack, Room, RoomEvent } from "livekit-client";
+import type { RemoteAudioTrack, RemoteTrack, Room, RoomEvent } from "livekit-client";
+import {
+  raccogliTracce, type PartecipanteLocale, type PartecipanteRemoto,
+} from "@/lib/videoTracks";
 
 /**
  * La videochiamata (§13).
@@ -14,9 +17,17 @@ import type { LocalParticipant, RemoteTrack, Room, RoomEvent } from "livekit-cli
  * configurate, se la rete la rifiuta o se il servizio cade, qui dentro si
  * spegne una luce e basta: l'asta continua.
  *
+ * L'audio richiede due attenzioni che il video non ha:
+ *
+ * 1. va riprodotto in elementi <audio> propri. Un <video> con l'attributo
+ *    muted (necessario per il proprio riquadro, altrimenti si sente la
+ *    propria voce in ritardo) non riprodurrebbe nulla;
+ * 2. i browser bloccano la riproduzione automatica finche' non c'e' stata
+ *    un'interazione. Se succede lo si dice e si offre un pulsante, invece di
+ *    restare in silenzio senza spiegazione.
+ *
  * La libreria viene caricata solo quando qualcuno entra davvero in
- * videochiamata, non all'apertura della sala: un'asta senza video non deve
- * pagare il peso di un SDK che non usa.
+ * videochiamata: un'asta senza video non paga il peso di un SDK che non usa.
  */
 
 export type StatoVideo = "spento" | "connessione" | "acceso" | "errore";
@@ -26,13 +37,17 @@ interface Contesto {
   errore: string | null;
   micAcceso: boolean;
   camAccesa: boolean;
+  /** Il browser sta bloccando la riproduzione dell'audio in arrivo. */
+  audioBloccato: boolean;
   entra: () => Promise<void>;
   esci: () => Promise<void>;
   alternaMic: () => Promise<void>;
   alternaCam: () => Promise<void>;
+  sbloccaAudio: () => Promise<void>;
   /** Traccia video di un partecipante, per identita' (= id del profilo). */
   traccia: (identita: string) => MediaStreamTrack | null;
-  /** Numero di persone collegate al video, incluso chi guarda. */
+  /** Chi ha il microfono acceso, per identita'. */
+  microfonoAperto: (identita: string) => boolean;
   collegati: number;
 }
 
@@ -74,6 +89,31 @@ export function useStaParlando(identita: string): boolean {
   return insieme.has(identita);
 }
 
+/**
+ * Riproduce la voce di un partecipante.
+ *
+ * Si usa attach() della libreria e non un <audio> costruito a mano: gestisce
+ * da sola i capricci dei browser sulla riproduzione automatica e il riaggancio
+ * quando la traccia cambia.
+ */
+function VoceRemota({ track }: { track: RemoteAudioTrack }) {
+  const contenitore = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const nodo = contenitore.current;
+    if (!nodo) return;
+    const elemento = track.attach();
+    elemento.style.display = "none";
+    nodo.appendChild(elemento);
+    return () => {
+      track.detach(elemento);
+      elemento.remove();
+    };
+  }, [track]);
+
+  return <div ref={contenitore} aria-hidden />;
+}
+
 export function VideoProvider({
   auctionId,
   children,
@@ -85,23 +125,27 @@ export function VideoProvider({
   const [errore, setErrore] = useState<string | null>(null);
   const [micAcceso, setMicAcceso] = useState(false);
   const [camAccesa, setCamAccesa] = useState(false);
+  const [audioBloccato, setAudioBloccato] = useState(false);
   const [collegati, setCollegati] = useState(0);
   const [tracce, setTracce] = useState<Map<string, MediaStreamTrack>>(new Map());
+  const [voci, setVoci] = useState<Map<string, RemoteAudioTrack>>(new Map());
+  const [microfoni, setMicrofoni] = useState<Set<string>>(new Set());
 
   const roomRef = useRef<Room | null>(null);
 
   const aggiornaTracce = useCallback((room: Room) => {
-    const mappa = new Map<string, MediaStreamTrack>();
-    room.remoteParticipants.forEach((p) => {
-      p.videoTrackPublications.forEach((pub) => {
-        if (pub.track?.mediaStreamTrack) mappa.set(p.identity, pub.track.mediaStreamTrack);
-      });
-    });
-    const locale: LocalParticipant = room.localParticipant;
-    locale.videoTrackPublications.forEach((pub) => {
-      if (pub.track?.mediaStreamTrack) mappa.set(locale.identity, pub.track.mediaStreamTrack);
-    });
-    setTracce(mappa);
+    // La regola sta in lib/videoTracks.ts, dove si puo' verificare: e' il
+    // punto in cui avevo dimenticato l'audio.
+    const { video, voci: audio, microfoniAperti } = raccogliTracce<RemoteAudioTrack>(
+      room.remoteParticipants.values() as unknown as Iterable<
+        PartecipanteRemoto<RemoteAudioTrack>
+      >,
+      room.localParticipant as unknown as PartecipanteLocale,
+    );
+
+    setTracce(video);
+    setVoci(audio);
+    setMicrofoni(microfoniAperti);
     setCollegati(room.remoteParticipants.size + 1);
   }, []);
 
@@ -121,12 +165,8 @@ export function VideoProvider({
       if (!risposta.ok) throw new Error("Permesso negato per la videochiamata.");
       const { url, token } = (await risposta.json()) as { url: string; token: string };
 
-      // Caricata solo adesso: chi non usa il video non se la porta dietro.
       const lk = await import("livekit-client");
-      const room = new lk.Room({
-        adaptiveStream: true, // riduce la qualita' dei riquadri piccoli
-        dynacast: true, // smette di inviare cio' che nessuno guarda
-      });
+      const room = new lk.Room({ adaptiveStream: true, dynacast: true });
 
       const eventi = lk.RoomEvent as typeof RoomEvent;
       const ricalcola = () => aggiornaTracce(room);
@@ -137,6 +177,8 @@ export function VideoProvider({
           t.detach();
           ricalcola();
         })
+        .on(eventi.TrackMuted, ricalcola)
+        .on(eventi.TrackUnmuted, ricalcola)
         .on(eventi.LocalTrackPublished, ricalcola)
         .on(eventi.LocalTrackUnpublished, ricalcola)
         .on(eventi.ParticipantConnected, ricalcola)
@@ -144,12 +186,20 @@ export function VideoProvider({
         .on(eventi.ActiveSpeakersChanged, (attivi) => {
           parlanti.aggiorna(new Set(attivi.map((p) => p.identity)));
         })
+        // Il browser puo' rifiutare di far partire l'audio da solo: qui lo si
+        // scopre, invece di restare in silenzio senza sapere perche'.
+        .on(eventi.AudioPlaybackStatusChanged, () => {
+          setAudioBloccato(!room.canPlaybackAudio);
+        })
         .on(eventi.Disconnected, () => {
           roomRef.current = null;
           setStato("spento");
           setMicAcceso(false);
           setCamAccesa(false);
+          setAudioBloccato(false);
           setTracce(new Map());
+          setVoci(new Map());
+          setMicrofoni(new Set());
           setCollegati(0);
           parlanti.aggiorna(new Set());
         });
@@ -162,6 +212,7 @@ export function VideoProvider({
       // ascoltato senza averlo chiesto.
       await room.localParticipant.setCameraEnabled(true).catch(() => undefined);
       setCamAccesa(room.localParticipant.isCameraEnabled);
+      setAudioBloccato(!room.canPlaybackAudio);
       ricalcola();
     } catch (e) {
       roomRef.current = null;
@@ -176,7 +227,10 @@ export function VideoProvider({
     setStato("spento");
     setMicAcceso(false);
     setCamAccesa(false);
+    setAudioBloccato(false);
     setTracce(new Map());
+    setVoci(new Map());
+    setMicrofoni(new Set());
     setCollegati(0);
     parlanti.aggiorna(new Set());
     await room?.disconnect().catch(() => undefined);
@@ -186,18 +240,38 @@ export function VideoProvider({
     const room = roomRef.current;
     if (!room) return;
     const acceso = !room.localParticipant.isMicrophoneEnabled;
-    await room.localParticipant.setMicrophoneEnabled(acceso).catch(() => undefined);
+    try {
+      await room.localParticipant.setMicrophoneEnabled(acceso);
+      setErrore(null);
+    } catch {
+      // Il permesso negato va detto: prima veniva ingoiato in silenzio e il
+      // microfono restava spento senza spiegazione.
+      setErrore("Il browser non concede il microfono. Controlla i permessi del sito.");
+    }
     setMicAcceso(room.localParticipant.isMicrophoneEnabled);
-  }, []);
+    aggiornaTracce(room);
+  }, [aggiornaTracce]);
 
   const alternaCam = useCallback(async () => {
     const room = roomRef.current;
     if (!room) return;
     const accesa = !room.localParticipant.isCameraEnabled;
-    await room.localParticipant.setCameraEnabled(accesa).catch(() => undefined);
+    try {
+      await room.localParticipant.setCameraEnabled(accesa);
+      setErrore(null);
+    } catch {
+      setErrore("Il browser non concede la telecamera. Controlla i permessi del sito.");
+    }
     setCamAccesa(room.localParticipant.isCameraEnabled);
     aggiornaTracce(room);
   }, [aggiornaTracce]);
+
+  const sbloccaAudio = useCallback(async () => {
+    const room = roomRef.current;
+    if (!room) return;
+    await room.startAudio().catch(() => undefined);
+    setAudioBloccato(!room.canPlaybackAudio);
+  }, []);
 
   // Uscendo dalla sala si chiude anche la videochiamata: una scheda chiusa non
   // deve lasciare una telecamera accesa.
@@ -212,14 +286,28 @@ export function VideoProvider({
     (identita: string) => tracce.get(identita) ?? null,
     [tracce],
   );
+  const microfonoAperto = useCallback(
+    (identita: string) => microfoni.has(identita),
+    [microfoni],
+  );
 
   const valore = useMemo<Contesto>(
     () => ({
-      stato, errore, micAcceso, camAccesa, collegati,
-      entra, esci, alternaMic, alternaCam, traccia,
+      stato, errore, micAcceso, camAccesa, audioBloccato, collegati,
+      entra, esci, alternaMic, alternaCam, sbloccaAudio, traccia, microfonoAperto,
     }),
-    [stato, errore, micAcceso, camAccesa, collegati, entra, esci, alternaMic, alternaCam, traccia],
+    [stato, errore, micAcceso, camAccesa, audioBloccato, collegati,
+     entra, esci, alternaMic, alternaCam, sbloccaAudio, traccia, microfonoAperto],
   );
 
-  return <VideoContext.Provider value={valore}>{children}</VideoContext.Provider>;
+  return (
+    <VideoContext.Provider value={valore}>
+      {children}
+      {/* Le voci in arrivo. Fuori dal flusso della pagina: non si vedono,
+          si sentono. */}
+      {[...voci].map(([identita, track]) => (
+        <VoceRemota key={identita} track={track} />
+      ))}
+    </VideoContext.Provider>
+  );
 }

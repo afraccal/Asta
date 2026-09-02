@@ -253,6 +253,9 @@ supabase/
 - Massimo 2 allenatori per squadra.
 - Il banditore di turno detiene l'apertura a 1 credito: se nessuno rilancia
   entro il timer, il giocatore e' suo.
+- Il listone lo vedono tutti, sempre: chi non e' di turno puo' cercare,
+  aprire una scheda e prepararsi la mossa. A essere legata al turno e' la
+  chiamata, non la consultazione.
 - Non si rilancia su se stessi (vale anche tra i due allenatori della squadra).
 - Ordine di chiamata sorteggiato all'avvio; le squadre rimaste vuote in lobby
   non partecipano.
@@ -316,6 +319,15 @@ timer compreso. Con un SFU ognuno invia una copia sola.
 
 La libreria viene caricata solo quando qualcuno entra davvero in
 videochiamata: chi gioca senza video non se ne porta dietro il peso.
+
+L'audio richiede due attenzioni che il video non ha, ed entrambe erano
+mancate alla prima stesura: le voci vanno riprodotte in elementi `<audio>`
+propri (il riquadro video e' `muted` per forza, altrimenti ognuno sentirebbe
+la propria voce in ritardo), e i browser bloccano la riproduzione automatica
+finche' non c'e' stata un'interazione, quindi lo si rileva e si offre un
+pulsante invece di restare in silenzio. La regola di raccolta delle tracce
+vive in `lib/videoTracks.ts` con i suoi test: e' il punto esatto in cui il
+bug era nato.
 
 Il permesso di entrare viene rilasciato dal server dopo aver verificato, con
 le stesse regole dell'asta, che chi lo chiede sia gia' membro di quella
