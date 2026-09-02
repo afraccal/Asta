@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { TelevisionSimple, ArrowLeft } from "@phosphor-icons/react";
+import { TelevisionSimple, ArrowLeft, ClockCounterClockwise } from "@phosphor-icons/react";
 import { NicknameGate } from "@/components/NicknameGate";
 import { RoomStage } from "@/components/auction/RoomStage";
 import { BidControls } from "@/components/auction/BidControls";
@@ -12,7 +12,9 @@ import { NominationPanel } from "@/components/auction/NominationPanel";
 import { AssignedOverlay } from "@/components/auction/AssignedOverlay";
 import { AdminBar, ConnectionBanner, StatusPill } from "@/components/auction/RoomChrome";
 import { SeatPicker } from "@/components/auction/SeatPicker";
+import { HistoryPanel } from "@/components/auction/HistoryPanel";
 import { Alert } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
 import { useAuctionAccess } from "@/lib/useAuctionAccess";
 import { useAuctionState } from "@/lib/useAuctionState";
 import { useCountdown } from "@/lib/useCountdown";
@@ -42,6 +44,7 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [tvMode, setTvMode] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const auction = state?.auction ?? null;
   const lot = state?.lot ?? null;
@@ -91,7 +94,11 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
 
   const supabase = getSupabaseBrowser();
   const myTeam = state.teams.find((t) => t.id === state.me.team_id) ?? null;
-  const turnTeam = state.teams.find((t) => t.id === auction.current_turn_team_id) ?? null;
+  // Ad asta chiusa non tocca piu' a nessuno: il turno esiste solo mentre si gioca.
+  const inCorso = auction.status === "running" || auction.status === "paused";
+  const turnTeam = inCorso
+    ? (state.teams.find((t) => t.id === auction.current_turn_team_id) ?? null)
+    : null;
   const leaderTeam = state.teams.find((t) => t.id === lot?.current_bidder_team_id) ?? null;
   const isMyTurn = turnTeam !== null && (turnTeam.id === myTeam?.id || state.me.is_admin);
 
@@ -187,6 +194,15 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
 
           <button
             type="button"
+            onClick={() => setHistoryOpen(true)}
+            title="Storico e rose"
+            className="flex size-8 items-center justify-center rounded-[var(--radius-inner)] bg-pitch-800 text-chalk-400 transition hover:text-chalk-50"
+          >
+            <ClockCounterClockwise size={18} weight="bold" />
+          </button>
+
+          <button
+            type="button"
             onClick={() => setTvMode((on) => !on)}
             aria-pressed={tvMode}
             title={tvMode ? "Esci dalla modalità TV" : "Modalità TV: più grande, senza contorno"}
@@ -219,13 +235,18 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
 
         <section className="area-stage spotlight flex min-h-0 flex-col items-center justify-center rounded-[var(--radius-card)] px-3 py-2">
           {auction.status === "completed" ? (
-            <div className="text-center">
+            <div className="flex flex-col items-center text-center">
               <h2 className="display text-chalk-50" style={{ fontSize: "var(--text-stage-name)" }}>
                 Asta terminata
               </h2>
               <p className="mt-2 text-chalk-400" style={{ fontSize: "var(--text-stage-meta)" }}>
                 {state.history.length} giocatori assegnati.
               </p>
+              <Link href={`/a/${upperCode}/riepilogo`} className="mt-5">
+                <Button variant="gold" size="lg">
+                  Vedi le rose complete
+                </Button>
+              </Link>
             </div>
           ) : lot ? (
             <RoomStage
@@ -295,6 +316,12 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
 
       <div className="vignette" aria-hidden />
       <div className="grain" aria-hidden />
+
+      <HistoryPanel
+        state={state}
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+      />
 
       {showCelebration && state.last_assigned && (
         <AssignedOverlay assigned={state.last_assigned} />

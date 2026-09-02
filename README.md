@@ -3,7 +3,7 @@
 Sala d'asta virtuale per il fantacalcio tra amici. Piu' partecipanti si
 collegano da PC o smartphone alla stessa stanza e fanno l'asta in tempo reale.
 
-**Stato:** Fasi 1-4 e 6 di 8 completate. L'asta si gioca, e si guarda.
+**Stato:** Fasi 1-6 di 8 completate. L'asta si gioca dall'inizio alla fine.
 
 ---
 
@@ -182,6 +182,7 @@ src/
     a/[code]/listone/page.tsx import del listone e scelta fra quelli esistenti
     a/[code]/giocatori/page.tsx consultazione del listone
     a/[code]/room/page.tsx    LA SALA D'ASTA: palco, tavoli, offerte, timer
+    a/[code]/riepilogo/page.tsx rose complete, statistiche, export CSV
     docs/formato-listone/     formato accettato, documentato per chi carica
     actions/listone.ts        server action: legge il file e restituisce l'anteprima
   components/
@@ -190,7 +191,8 @@ src/
     listone/ImportPreview.tsx anteprima con mappatura colonne e segnalazioni
     player/                   PlayerPortrait, PlayerCard, PlayerSearch
     auction/                  RoomStage, CountdownRing, BidControls, TeamTable,
-                              NominationPanel, AssignedOverlay, RoomChrome
+                              NominationPanel, AssignedOverlay, RoomChrome,
+                              HistoryPanel, SeatPicker
     NicknameGate.tsx          per chi apre il link senza passare dalla home
   lib/
     types.ts                  tipi allineati a get_auction_state()
@@ -203,6 +205,7 @@ src/
     useAsyncData.ts           caricamento dati al montaggio
     useLotFinalizer.ts        chiusura del lotto allo scadere del tempo
     playerImage.ts            catena di risoluzione delle foto
+    exportCsv.ts              costruzione del CSV delle rose
     listone/parse.ts          parser xlsx/CSV con riconoscimento colonne
     supabase/                 client browser e server
 
@@ -260,6 +263,23 @@ pulsazione rossa sotto i tre secondi, aggiudicazione, cambio turno. Tutte solo
 su `transform` e `opacity`, e tutte spente per chi ha chiesto meno animazioni
 al sistema.
 
+## Storico e riepilogo
+
+Lo **storico** e' un pannello laterale, non una pagina: lo si apre in mezzo a
+un'asta, e uscire dalla stanza significherebbe perdere di vista il timer. Ha
+due schede, storico cronologico e rose per squadra, e si filtra per nome,
+ruolo e squadra. I dati arrivano dallo snapshot che il client ha gia', quindi
+si aggiorna da solo a ogni aggiudicazione.
+
+Il **riepilogo** (`/a/<codice>/riepilogo`) e' invece una pagina, perche' lo si
+guarda a giochi fatti: rose complete divise per ruolo, spesa di ognuno,
+acquisto piu' caro, ed export CSV. Funziona anche ad asta in corso, come
+fotografia della situazione.
+
+La costruzione del CSV sta in `lib/exportCsv.ts` e non nella pagina: virgole,
+virgolette e accenti nei nomi sono esattamente il genere di cosa che rompe un
+file aperto in Excel, ed e' l'unica parte che vale la pena verificare da sola.
+
 ---
 
 ## Roadmap
@@ -271,7 +291,7 @@ al sistema.
 | 2 | Import listone (xlsx/CSV), ricerca, scheda giocatore | ✅ |
 | 3 | Offerte, crediti, timer, assegnazione | ✅ |
 | 4 | Realtime, riconnessioni | ✅ |
-| 5 | Storico, turni, pausa/ripresa, chiusura | 🟡 turni e pausa fatti; manca lo storico in sala |
+| 5 | Storico, turni, pausa/ripresa, chiusura | ✅ |
 | 6 | Sala d'asta, tavoli, animazioni, modalità TV | ✅ |
 | 7 | Videochiamata (LiveKit, isolata dall'asta) | ⬜ |
 | 8 | Test E2E multi-utente, hardening, deploy | ⬜ |
