@@ -35,6 +35,8 @@ const MESSAGES: Record<string, string> = {
   bid_too_low: "Qualcuno ti ha preceduto: devi superare l'offerta attuale.",
   insufficient_credits: "Crediti insufficienti per questa offerta.",
   role_full: "Hai già completato questo reparto: non puoi prendere altri giocatori di questo ruolo.",
+  lot_not_assigned: "Questo giocatore non risulta assegnato.",
+  invalid_price: "Il prezzo non è valido.",
   code_generation_failed: "Impossibile generare il codice, riprova.",
 };
 

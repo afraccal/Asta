@@ -296,6 +296,24 @@ pulsazione rossa sotto i tre secondi, aggiudicazione, cambio turno. Tutte solo
 su `transform` e `opacity`, e tutte spente per chi ha chiesto meno animazioni
 al sistema.
 
+## Correzioni dell'amministratore
+
+Durante una serata vera si sbaglia: si assegna al tavolo sbagliato, si digita
+40 invece di 4. Dal pannello dello storico l'amministratore puo' quindi
+**revocare un'assegnazione** (crediti restituiti, posto in rosa liberato,
+giocatore di nuovo chiamabile) e **assegnare un giocatore a mano**, scegliendo
+squadra e prezzo, anche zero.
+
+Sono poteri dell'amministratore e non del banditore di turno: il banditore
+cambia a ogni giro, e chiunque potrebbe altrimenti annullare gli acquisti
+degli altri.
+
+La liberta' e' su *a chi* e *a quanto*, non sul violare i vincoli: anche a mano
+i crediti devono bastare e il reparto deve avere ancora posto, altrimenti la
+rosa risulterebbe valida sullo schermo e impossibile nella realta'. La revoca
+chiede conferma, perche' un tocco per sbaglio su un telefono e' fin troppo
+facile.
+
 ## Storico e riepilogo
 
 Lo **storico** e' un pannello laterale, non una pagina: lo si apre in mezzo a

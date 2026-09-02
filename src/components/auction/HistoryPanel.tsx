@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { X } from "@phosphor-icons/react";
+import { X, ArrowUUpLeft } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { Input } from "@/components/ui/Input";
 import { RoleBadge } from "@/components/player/PlayerPortrait";
 import { ROLE_COLORS, type AuctionState, type PlayerRole } from "@/lib/types";
+import { AssegnazioneManuale } from "@/components/auction/AssegnazioneManuale";
 
 const ROLES: PlayerRole[] = ["P", "D", "C", "A"];
 
-type View = "storico" | "rose";
+type View = "storico" | "rose" | "assegna";
 
 /**
  * Storico e rose, consultabili senza uscire dalla sala (§15).
@@ -22,16 +23,26 @@ type View = "storico" | "rose";
 export function HistoryPanel({
   state,
   open,
+  busy,
   onClose,
+  onRevoca,
+  onAssegna,
 }: {
   state: AuctionState;
   open: boolean;
+  busy: boolean;
   onClose: () => void;
+  onRevoca: (lotId: string) => void;
+  onAssegna: (playerId: string, teamId: string, prezzo: number) => void;
 }) {
   const [view, setView] = useState<View>("storico");
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<PlayerRole | null>(null);
   const [teamId, setTeamId] = useState<string | null>(null);
+  // La revoca chiede conferma: e' un'operazione che tocca crediti e rose,
+  // e un tocco per sbaglio su un telefono e' fin troppo facile.
+  const [daConfermare, setDaConfermare] = useState<string | null>(null);
+  const isAdmin = state.me.is_admin;
 
   useEffect(() => {
     if (!open) return;
@@ -76,7 +87,7 @@ export function HistoryPanel({
       >
         <header className="flex items-center gap-3 border-b border-pitch-700 px-4 py-3">
           <div className="flex rounded-[var(--radius-inner)] bg-pitch-800 p-0.5">
-            {(["storico", "rose"] as View[]).map((v) => (
+            {((isAdmin ? ["storico", "rose", "assegna"] : ["storico", "rose"]) as View[]).map((v) => (
               <button
                 key={v}
                 type="button"
@@ -164,6 +175,40 @@ export function HistoryPanel({
                       <span className="display shrink-0 text-lg text-gold-400 tabular">
                         {entry.price}
                       </span>
+
+                      {isAdmin &&
+                        (daConfermare === entry.lot_id ? (
+                          <span className="flex shrink-0 gap-1">
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => {
+                                setDaConfermare(null);
+                                onRevoca(entry.lot_id);
+                              }}
+                              className="rounded-lg bg-alarm-600 px-2 py-1 text-[11px] font-medium text-white"
+                            >
+                              Revoca
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDaConfermare(null)}
+                              className="rounded-lg bg-pitch-800 px-2 py-1 text-[11px] text-chalk-400"
+                            >
+                              No
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            title="Togli questo giocatore dalla rosa e restituisci i crediti"
+                            onClick={() => setDaConfermare(entry.lot_id)}
+                            className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-pitch-800 text-chalk-600 transition hover:text-alarm-400"
+                          >
+                            <ArrowUUpLeft size={13} weight="bold" />
+                            <span className="sr-only">Revoca l&apos;assegnazione</span>
+                          </button>
+                        ))}
                     </li>
                   ))}
                 </ul>
@@ -179,6 +224,8 @@ export function HistoryPanel({
               </span>
             </footer>
           </>
+        ) : view === "assegna" ? (
+          <AssegnazioneManuale state={state} busy={busy} onAssegna={onAssegna} />
         ) : (
           <div className="min-h-0 flex-1 overflow-y-auto">
             {state.teams.map((team) => (

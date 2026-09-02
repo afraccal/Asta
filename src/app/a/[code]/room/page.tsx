@@ -349,7 +349,21 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
       <HistoryPanel
         state={state}
         open={historyOpen}
+        busy={busy}
         onClose={() => setHistoryOpen(false)}
+        onRevoca={(lotId) =>
+          run(() => supabase.rpc("revoca_assegnazione", { p_lot_id: lotId }))
+        }
+        onAssegna={(playerId, teamId, prezzo) =>
+          run(() =>
+            supabase.rpc("assegna_giocatore", {
+              p_auction_id: access.auctionId!,
+              p_player_id: playerId,
+              p_team_id: teamId,
+              p_price: prezzo,
+            }),
+          )
+        }
       />
 
       {showCelebration && state.last_assigned && (
