@@ -3,7 +3,7 @@
 Sala d'asta virtuale per il fantacalcio tra amici. Piu' partecipanti si
 collegano da PC o smartphone alla stessa stanza e fanno l'asta in tempo reale.
 
-**Stato:** Fasi 1 e 2 di 8 completate.
+**Stato:** Fasi 1-4 di 8 completate. L'asta si gioca.
 
 ---
 
@@ -25,9 +25,10 @@ Le chiavi stampate da `db:start` vanno in `.env.local` (vedi `.env.example`).
 npm run test:all      # tutto: parser, integrazione, ciclo asta, concorrenza
 ```
 
-- `test` (vitest) — parser del listone e importazione end-to-end contro il
-  database locale, con il file ufficiale di Fantacalcio.it se presente in
-  `~/Downloads` (altrimenti quei test vengono saltati).
+- `test` (vitest) — parser del listone, importazione end-to-end, calcolo del
+  tempo residuo e **asta con più partecipanti collegati insieme**: tre client
+  Supabase distinti, con sessioni e websocket separati, che si contendono la
+  stessa asta.
 - `test:flow` — 16 verifiche sul ciclo dell'asta (creazione, ingresso, limite di
   2 allenatori, chiamata, offerte non valide, reset del timer, assegnazione,
   idempotenza, cambio turno, pausa/ripresa, snapshot, ricerca).
@@ -37,7 +38,7 @@ npm run test:all      # tutto: parser, integrazione, ciclo asta, concorrenza
 
 ---
 
-## Le tre decisioni che reggono tutto il progetto
+## Le quattro decisioni che reggono tutto il progetto
 
 ### 1. La logica critica sta nel database, non in TypeScript
 
@@ -82,7 +83,20 @@ La chiusura del lotto ha **due inneschi indipendenti**:
 superata, quindi la seconda chiamata non trova nulla da fare. I due inneschi
 non possono generare una doppia assegnazione.
 
-### 3. Realtime via Broadcast, con rilevamento dei buchi
+### 3. Il countdown si ricalcola, non si accumula
+
+Il valore mostrato non è tenuto in stato React: viene ricalcolato a ogni render
+sottraendo la scadenza all'ora del server. Lo stato serve solo a provocare i
+render, e il battito è un `setInterval`, non `requestAnimationFrame`.
+
+Non è un dettaglio: rAF viene **congelato** quando la scheda non è in primo
+piano. Con il valore conservato in stato, una scheda in secondo piano restava
+ferma sull'ultimo numero — e la schermata "ASSEGNATO!" non spariva più. Un
+timer al massimo rallenta, non si ferma; e siccome il numero si ricalcola
+sempre dalla scadenza assoluta, un rallentamento non lascia mai indietro nulla:
+al primo render successivo il valore è già quello giusto.
+
+### 4. Realtime via Broadcast, con rilevamento dei buchi
 
 Un trigger su `auction_events` emette un messaggio sul topic
 `auction:<id>` (canale privato, accesso filtrato dalle RLS su
@@ -144,6 +158,7 @@ src/
     a/[code]/lobby/page.tsx   lobby: tavoli, ingressi, avvio
     a/[code]/listone/page.tsx import del listone e scelta fra quelli esistenti
     a/[code]/giocatori/page.tsx consultazione del listone
+    a/[code]/room/page.tsx    LA SALA D'ASTA: palco, tavoli, offerte, timer
     docs/formato-listone/     formato accettato, documentato per chi carica
     actions/listone.ts        server action: legge il file e restituisce l'anteprima
   components/
@@ -151,6 +166,8 @@ src/
     lobby/                    InviteBar, TeamSlot
     listone/ImportPreview.tsx anteprima con mappatura colonne e segnalazioni
     player/                   PlayerPortrait, PlayerCard, PlayerSearch
+    auction/                  CountdownRing, BidControls, TeamTable,
+                              NominationPanel, AssignedOverlay, RoomChrome
     NicknameGate.tsx          per chi apre il link senza passare dalla home
   lib/
     types.ts                  tipi allineati a get_auction_state()
@@ -161,6 +178,7 @@ src/
     useCountdown.ts           countdown su requestAnimationFrame
     useAuctionAccess.ts       codice invito -> asta
     useAsyncData.ts           caricamento dati al montaggio
+    useLotFinalizer.ts        chiusura del lotto allo scadere del tempo
     playerImage.ts            catena di risoluzione delle foto
     listone/parse.ts          parser xlsx/CSV con riconoscimento colonne
     supabase/                 client browser e server
@@ -201,9 +219,9 @@ supabase/
 | 0 | Setup progetto, Supabase locale, CI | ✅ |
 | 1 | Schema, RLS, auth anonima, creazione asta, lobby, squadre | ✅ |
 | 2 | Import listone (xlsx/CSV), ricerca, scheda giocatore | ✅ |
-| 3 | Offerte, crediti, timer, assegnazione | 🟡 motore gia' pronto e testato lato DB |
-| 4 | Realtime, riconnessioni | 🟡 hook gia' pronto |
-| 5 | Storico, turni, pausa/ripresa, chiusura | 🟡 funzioni gia' pronte lato DB |
+| 3 | Offerte, crediti, timer, assegnazione | ✅ |
+| 4 | Realtime, riconnessioni | ✅ |
+| 5 | Storico, turni, pausa/ripresa, chiusura | 🟡 turni e pausa fatti; manca lo storico in sala |
 | 6 | Sala d'asta, tavoli, animazioni, modalita' TV | ⬜ |
 | 7 | Videochiamata (LiveKit, isolata dall'asta) | ⬜ |
 | 8 | Test E2E multi-utente, hardening, deploy | ⬜ |

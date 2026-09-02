@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
@@ -23,6 +23,12 @@ export default function LobbyPage({ params }: PageProps<"/a/[code]/lobby">) {
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  // Quando l'amministratore avvia, tutti i presenti entrano in sala insieme.
+  useEffect(() => {
+    const status = state?.auction.status;
+    if (status && status !== "lobby") router.replace(`/a/${upperCode}/room`);
+  }, [state?.auction.status, router, upperCode]);
 
   if (access.phase === "need-nickname") {
     return (

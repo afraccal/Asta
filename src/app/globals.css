@@ -94,3 +94,50 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ===========================================================================
+   Animazioni della sala d'asta.
+   Solo transform e opacity: nessun reflow, quindi restano fluide anche su una
+   TV o su uno smartphone di qualche anno fa. Il blocco prefers-reduced-motion
+   piu' sopra le neutralizza per chi le ha disattivate a livello di sistema.
+   =========================================================================== */
+
+@keyframes lot-enter {
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes bid-punch {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+@keyframes leader-flash {
+  0%   { box-shadow: 0 0 0 0 var(--color-gold-400); }
+  100% { box-shadow: 0 0 0 14px transparent; }
+}
+
+@keyframes alarm-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.75; transform: scale(1.05); }
+}
+
+@keyframes assigned-enter {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes rise-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@layer components {
+  .anim-lot      { animation: lot-enter 420ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .anim-punch    { animation: bid-punch 280ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .anim-flash    { animation: leader-flash 600ms ease-out; }
+  .anim-alarm    { animation: alarm-pulse 700ms ease-in-out infinite; }
+  .anim-assigned { animation: assigned-enter 420ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .anim-rise     { animation: rise-fade 340ms ease-out both; }
+}
