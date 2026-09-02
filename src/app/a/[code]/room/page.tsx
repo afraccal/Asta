@@ -11,6 +11,7 @@ import { TeamTable } from "@/components/auction/TeamTable";
 import { NominationPanel } from "@/components/auction/NominationPanel";
 import { AssignedOverlay } from "@/components/auction/AssignedOverlay";
 import { AdminBar, ConnectionBanner, StatusPill } from "@/components/auction/RoomChrome";
+import { SeatPicker } from "@/components/auction/SeatPicker";
 import { Alert } from "@/components/ui/Alert";
 import { useAuctionAccess } from "@/lib/useAuctionAccess";
 import { useAuctionState } from "@/lib/useAuctionState";
@@ -266,15 +267,27 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
         </div>
 
         <div className="area-bid flex flex-col items-center gap-2">
-          {lot && auction.status !== "completed" && (
-            <BidControls
-              lot={lot}
-              myTeam={myTeam}
-              minIncrement={auction.min_increment}
-              paused={paused}
+          {/* Senza squadra non ci sono offerte da fare: al loro posto si offre
+              il modo di prendere un posto, che altrimenti ad asta iniziata
+              non esisterebbe. */}
+          {myTeam === null && auction.status !== "completed" ? (
+            <SeatPicker
+              teams={state.teams}
               busy={busy}
-              onBid={handleBid}
+              onSit={(teamId) => run(() => supabase.rpc("claim_team", { p_team_id: teamId }))}
             />
+          ) : (
+            lot &&
+            auction.status !== "completed" && (
+              <BidControls
+                lot={lot}
+                myTeam={myTeam}
+                minIncrement={auction.min_increment}
+                paused={paused}
+                busy={busy}
+                onBid={handleBid}
+              />
+            )
           )}
           <Alert className="w-full max-w-md">{message}</Alert>
         </div>
