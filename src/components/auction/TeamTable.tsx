@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { Avatar } from "@/components/ui/Avatar";
+import { VideoTile } from "@/components/video/VideoTile";
 import { ROLE_COLORS, type Team } from "@/lib/types";
 
 /**
@@ -66,25 +66,21 @@ export function TeamTable({
             return (
               <div
                 key={member?.profile_id ?? `posto-${index}`}
-                className="relative flex h-[clamp(2.5rem,6.5vh,6.5rem)] flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-[var(--radius-inner)] bg-pitch-950/60 ring-1 ring-inset ring-white/[0.06]"
+                className="h-[clamp(2.5rem,6.5vh,6.5rem)] flex-1"
               >
                 {member ? (
-                  <>
-                    <Avatar
-                      name={member.display_name}
-                      src={member.avatar_url}
-                      online={member.online}
-                      size={compact ? 26 : 30}
-                    />
-                    <span
-                      className="max-w-full truncate px-1.5 text-chalk-300"
-                      style={{ fontSize: "var(--text-label)" }}
-                    >
-                      {member.display_name}
-                    </span>
-                  </>
+                  <VideoTile
+                    profileId={member.profile_id}
+                    nome={member.display_name}
+                    avatarUrl={member.avatar_url}
+                    online={member.online}
+                    dimensioneAvatar={compact ? 26 : 30}
+                  />
                 ) : (
-                  <span className="text-chalk-600" style={{ fontSize: "var(--text-label)" }}>
+                  <span
+                    className="flex size-full items-center justify-center rounded-[var(--radius-inner)] bg-pitch-950/60 text-chalk-600 ring-1 ring-inset ring-white/[0.06]"
+                    style={{ fontSize: "var(--text-label)" }}
+                  >
                     posto libero
                   </span>
                 )}

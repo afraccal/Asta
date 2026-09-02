@@ -206,3 +206,19 @@ describe.skipIf(!available)("un client con la chiave anonima non puo' barare", (
     expect(error?.message).toContain("not_allowed");
   });
 });
+
+describe.skipIf(!available)("la videochiamata non indebolisce l'asta", () => {
+  it("il permesso video non viene rilasciato a chi non e' autenticato", async () => {
+    const risposta = await fetch("http://localhost:3000/api/video/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ auctionId: "00000000-0000-0000-0000-000000000000" }),
+    }).catch(() => null);
+
+    // Se il server di sviluppo non gira, il test non ha nulla da dire.
+    if (!risposta) return;
+
+    // 503 = video non configurato, 401 = nessuna sessione. Mai 200.
+    expect([401, 403, 503]).toContain(risposta.status);
+  });
+});

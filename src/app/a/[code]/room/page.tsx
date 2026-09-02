@@ -16,6 +16,8 @@ import { AssignedOverlay } from "@/components/auction/AssignedOverlay";
 import { AdminBar, ConnectionBanner, StatusPill } from "@/components/auction/RoomChrome";
 import { SeatPicker } from "@/components/auction/SeatPicker";
 import { ThemeCycleButton } from "@/components/ui/ThemeSwitcher";
+import { VideoProvider } from "@/components/video/VideoProvider";
+import { VideoControls } from "@/components/video/VideoControls";
 import { HistoryPanel } from "@/components/auction/HistoryPanel";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -156,12 +158,15 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
     ));
 
   return (
-    <div
-      className={cn(
-        "room-light relative flex min-h-[100dvh] flex-col",
-        tvMode && "tv-mode",
-      )}
-    >
+    // Il provider avvolge la sala ma non la governa: se il video non parte,
+    // qui dentro non cambia niente.
+    <VideoProvider auctionId={access.auctionId}>
+      <div
+        className={cn(
+          "room-light relative flex min-h-[100dvh] flex-col",
+          tvMode && "tv-mode",
+        )}
+      >
       <ConnectionBanner connection={connection} />
 
       <header
@@ -179,6 +184,8 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
         <StatusPill status={auction.status} liveLot={lot !== null} />
 
         <div className="flex shrink-0 items-center gap-2">
+          {!tvMode && <VideoControls />}
+
           {!tvMode && state.me.is_admin && (
             <AdminBar
               status={auction.status}
@@ -342,6 +349,7 @@ export default function RoomPage({ params }: PageProps<"/a/[code]/room">) {
       {showCelebration && state.last_assigned && (
         <AssignedOverlay assigned={state.last_assigned} />
       )}
-    </div>
+      </div>
+    </VideoProvider>
   );
 }

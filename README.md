@@ -5,7 +5,7 @@
 Sala d'asta virtuale per il fantacalcio tra amici. Piu' partecipanti si
 collegano da PC o smartphone alla stessa stanza e fanno l'asta in tempo reale.
 
-**Stato:** completo. Fasi 1-6 e 8 fatte, fase 7 (videochiamata) esclusa dallo scopo.
+**Stato:** completo, tutte e 8 le fasi.
 
 ---
 
@@ -302,6 +302,42 @@ La costruzione del CSV sta in `lib/exportCsv.ts` e non nella pagina: virgole,
 virgolette e accenti nei nomi sono esattamente il genere di cosa che rompe un
 file aperto in Excel, ed e' l'unica parte che vale la pena verificare da sola.
 
+## La videochiamata
+
+E' un extra, e il codice lo tratta come tale: se le chiavi non sono
+configurate, l'endpoint dei permessi risponde 503, i comandi spariscono e
+l'asta si comporta esattamente come se il video non esistesse. Anche a video
+attivo, nessun componente dell'asta dipende dalla videochiamata.
+
+Si usa un SFU (LiveKit) e non una connessione diretta fra i browser: in mesh,
+con otto tavoli, ognuno dovrebbe inviare il proprio video a tutti gli altri.
+La CPU va al massimo, e a rallentare non e' solo il video ma la scheda intera,
+timer compreso. Con un SFU ognuno invia una copia sola.
+
+La libreria viene caricata solo quando qualcuno entra davvero in
+videochiamata: chi gioca senza video non se ne porta dietro il peso.
+
+Il permesso di entrare viene rilasciato dal server dopo aver verificato, con
+le stesse regole dell'asta, che chi lo chiede sia gia' membro di quella
+stanza. Si entra con la telecamera accesa e il microfono spento.
+
+### Attivarla
+
+1. Creare un progetto gratuito su **https://cloud.livekit.io**
+2. Copiare *WebSocket URL*, *API Key* e *API Secret*
+3. Metterli fra le variabili d'ambiente (in locale in `.env.local`, su Vercel
+   in *Settings -> Environment Variables*):
+
+```
+LIVEKIT_URL=wss://<progetto>.livekit.cloud
+LIVEKIT_API_KEY=...
+LIVEKIT_API_SECRET=...
+```
+
+⚠️ **Senza** il prefisso `NEXT_PUBLIC_`: queste chiavi devono restare sul
+server. Se finissero nel browser, chiunque potrebbe entrare in qualunque
+stanza video.
+
 ---
 
 ## Messa online
@@ -393,5 +429,5 @@ Per attivare la pubblicazione automatica a ogni push: dalla dashboard Vercel,
 | 4 | Realtime, riconnessioni | ✅ |
 | 5 | Storico, turni, pausa/ripresa, chiusura | ✅ |
 | 6 | Sala d'asta, tavoli, animazioni, modalità TV | ✅ |
-| 7 | Videochiamata | ❌ fuori scope, scelta del 2 settembre 2026 |
+| 7 | Videochiamata (LiveKit, isolata dall'asta) | ✅ |
 | 8 | Test E2E, sicurezza, gestione errori, deploy | ✅ |
