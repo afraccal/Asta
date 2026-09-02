@@ -27,6 +27,12 @@ begin
       'status', v_auction.status,
       'admin_id', v_auction.admin_id,
       'player_list_id', v_auction.player_list_id,
+      'player_list', (
+        select jsonb_build_object(
+                 'id', l.id, 'name', l.name, 'season', l.season,
+                 'player_count', (select count(*) from public.players pl where pl.list_id = l.id))
+          from public.player_lists l where l.id = v_auction.player_list_id
+      ),
       'budget_initial', v_auction.budget_initial,
       'team_count', v_auction.team_count,
       'slots_per_team', v_auction.slots_per_team,

@@ -3,7 +3,7 @@
 Sala d'asta virtuale per il fantacalcio tra amici. Piu' partecipanti si
 collegano da PC o smartphone alla stessa stanza e fanno l'asta in tempo reale.
 
-**Stato:** Fase 1 di 8 completata.
+**Stato:** Fasi 1 e 2 di 8 completate.
 
 ---
 
@@ -22,9 +22,12 @@ Le chiavi stampate da `db:start` vanno in `.env.local` (vedi `.env.example`).
 ## Test
 
 ```bash
-npm run test:db       # ciclo completo + concorrenza reale
+npm run test:all      # tutto: parser, integrazione, ciclo asta, concorrenza
 ```
 
+- `test` (vitest) — parser del listone e importazione end-to-end contro il
+  database locale, con il file ufficiale di Fantacalcio.it se presente in
+  `~/Downloads` (altrimenti quei test vengono saltati).
 - `test:flow` — 16 verifiche sul ciclo dell'asta (creazione, ingresso, limite di
   2 allenatori, chiamata, offerte non valide, reset del timer, assegnazione,
   idempotenza, cambio turno, pausa/ripresa, snapshot, ricerca).
@@ -95,6 +98,41 @@ congelate) e a ogni riconnessione del websocket.
 
 ---
 
+## Il listone
+
+L'importazione accetta Excel (`.xlsx`) e CSV. Il file ufficiale di
+Fantacalcio.it funziona senza modifiche, ma il parser non da' per scontata
+quella struttura:
+
+- la **riga di intestazione viene cercata** nelle prime 15 righe, quindi una
+  riga di titolo sopra le intestazioni non da' fastidio;
+- le colonne sono riconosciute **per nome**, ignorando maiuscole, accenti,
+  punti e spazi, in qualsiasi ordine (`Qt.A`, `Quotazione` e `Prezzo` sono la
+  stessa cosa);
+- nei file multi-foglio viene scelto **Tutti** e il foglio **Ceduti** non viene
+  mai importato — ma il foglio resta selezionabile dall'anteprima.
+
+Il parsing gira **sul server**: exceljs pesa troppo per il bundle del browser e
+cosi' xlsx e CSV seguono un percorso solo. L'anteprima mostra come sono state
+interpretate le colonne, quali sono state ignorate e quali righe hanno problemi;
+**niente viene scritto finche' non si conferma**.
+
+Reimportare un file aggiornato e' un **upsert sull'Id ufficiale**: i giocatori
+esistenti vengono aggiornati invece di duplicati, e i riferimenti delle aste in
+corso restano validi. Il formato completo e' documentato in-app su
+`/docs/formato-listone`.
+
+### Foto dei giocatori
+
+`resolvePlayerImage()` interroga una catena di fornitori in ordine: URL
+esplicito dal listone, poi convenzione su un archivio proprio
+(`NEXT_PUBLIC_PLAYER_IMAGE_BASE`), e in futuro un servizio esterno. Aggiungerne
+uno significa scrivere un adattatore in `src/lib/playerImage.ts` e nient'altro:
+i componenti non cambiano. Senza foto si ottiene un segnaposto con le iniziali
+sul colore del ruolo, leggibile anche da lontano.
+
+---
+
 ## Struttura
 
 ```
@@ -104,9 +142,15 @@ src/
     crea/page.tsx             wizard di creazione asta
     a/[code]/page.tsx         link di invito -> lobby
     a/[code]/lobby/page.tsx   lobby: tavoli, ingressi, avvio
+    a/[code]/listone/page.tsx import del listone e scelta fra quelli esistenti
+    a/[code]/giocatori/page.tsx consultazione del listone
+    docs/formato-listone/     formato accettato, documentato per chi carica
+    actions/listone.ts        server action: legge il file e restituisce l'anteprima
   components/
     ui/                       Button, Input, Alert, Avatar
     lobby/                    InviteBar, TeamSlot
+    listone/ImportPreview.tsx anteprima con mappatura colonne e segnalazioni
+    player/                   PlayerPortrait, PlayerCard, PlayerSearch
     NicknameGate.tsx          per chi apre il link senza passare dalla home
   lib/
     types.ts                  tipi allineati a get_auction_state()
@@ -116,6 +160,9 @@ src/
     useAuctionState.ts        snapshot + realtime + riallineamento
     useCountdown.ts           countdown su requestAnimationFrame
     useAuctionAccess.ts       codice invito -> asta
+    useAsyncData.ts           caricamento dati al montaggio
+    playerImage.ts            catena di risoluzione delle foto
+    listone/parse.ts          parser xlsx/CSV con riconoscimento colonne
     supabase/                 client browser e server
 
 supabase/
@@ -153,7 +200,7 @@ supabase/
 |---|---|---|
 | 0 | Setup progetto, Supabase locale, CI | ✅ |
 | 1 | Schema, RLS, auth anonima, creazione asta, lobby, squadre | ✅ |
-| 2 | Import listone CSV, ricerca, scheda giocatore | ⬜ |
+| 2 | Import listone (xlsx/CSV), ricerca, scheda giocatore | ✅ |
 | 3 | Offerte, crediti, timer, assegnazione | 🟡 motore gia' pronto e testato lato DB |
 | 4 | Realtime, riconnessioni | 🟡 hook gia' pronto |
 | 5 | Storico, turni, pausa/ripresa, chiusura | 🟡 funzioni gia' pronte lato DB |

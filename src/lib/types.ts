@@ -119,6 +119,12 @@ export interface AuctionInfo {
   status: AuctionStatus;
   admin_id: string;
   player_list_id: string | null;
+  player_list: {
+    id: string;
+    name: string;
+    season: string | null;
+    player_count: number;
+  } | null;
   budget_initial: number;
   team_count: number;
   slots_per_team: number | null;

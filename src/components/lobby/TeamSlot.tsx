@@ -28,7 +28,7 @@ export function TeamSlot({
   onLeave,
   onRename,
 }: Props) {
-  // La bozza esiste solo durante la modifica: si inizializza al click, cosi'
+  // La bozza esiste solo durante la modifica: si inizializza al click, così
   // non serve tenerla sincronizzata con il nome che arriva dal server.
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -121,7 +121,7 @@ export function TeamSlot({
           size="sm"
           onClick={onJoin}
           disabled={busy || full || !canJoin}
-          title={full ? "Questa squadra ha gia' 2 allenatori" : undefined}
+          title={full ? "Questa squadra ha già 2 allenatori" : undefined}
         >
           {full ? "Completa" : "Siediti qui"}
         </Button>

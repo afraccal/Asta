@@ -11,7 +11,7 @@ import { friendlyError } from "@/lib/errors";
 
 export default function HomePage() {
   const router = useRouter();
-  // Il nome salvato fa da valore iniziale finche' l'utente non scrive.
+  // Il nome salvato fa da valore iniziale finché l'utente non scrive.
   const storedNickname = useStoredNickname();
   const [draftNickname, setDraftNickname] = useState<string | null>(null);
   const nickname = draftNickname ?? storedNickname;

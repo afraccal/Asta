@@ -55,7 +55,7 @@ export default function CreateAuctionPage() {
         <header className="space-y-2">
           <h1 className="display text-4xl text-chalk-50">Nuova asta</h1>
           <p className="text-sm text-chalk-400">
-            Imposta le regole. Potrai modificarle finche&apos; l&apos;asta non parte.
+            Imposta le regole. Potrai modificarle finché l&apos;asta non parte.
           </p>
         </header>
 
@@ -115,7 +115,7 @@ export default function CreateAuctionPage() {
                 </span>
                 <span className="block text-xs text-chalk-400">
                   Se attivo, il sistema tiene da parte 1 credito per ogni slot ancora
-                  vuoto: nessuno puo&apos; svuotare il budget e restare con la rosa
+                  vuoto: nessuno può svuotare il budget e restare con la rosa
                   incompleta.
                 </span>
               </span>

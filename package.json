@@ -12,16 +12,21 @@
     "db:reset": "supabase db reset",
     "test:flow": "docker exec -i supabase_db_asta-fantacalcio psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f - < supabase/tests/flow_test.sql",
     "test:concurrency": "docker exec -i supabase_db_asta-fantacalcio psql -U postgres -d postgres -q -f - < supabase/tests/concurrency_setup.sql && ./supabase/tests/concurrency_test.sh",
-    "test:db": "npm run test:flow && npm run test:concurrency"
+    "test:db": "npm run test:flow && npm run test:concurrency",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:all": "npm run test && npm run test:db"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.109.0",
     "clsx": "^2.1.1",
+    "exceljs": "^4.4.0",
     "next": "16.3.4",
     "papaparse": "^5.7.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "server-only": "^0.0.1",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.5.4"
   },
@@ -31,12 +36,14 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/ws": "^8.18.1",
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "supabase": "^2.116.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "ws": "^8.21.3"
   }
 }

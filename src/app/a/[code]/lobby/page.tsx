@@ -2,6 +2,7 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { NicknameGate } from "@/components/NicknameGate";
@@ -145,12 +146,35 @@ export default function LobbyPage({ params }: PageProps<"/a/[code]/lobby">) {
             ))}
           </dl>
 
-          {auction.player_list_id === null && (
-            <Alert tone="info">
-              Prima di iniziare serve il listone dei giocatori. L&apos;importazione da
-              CSV arriva nella prossima fase di sviluppo.
-            </Alert>
-          )}
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-pitch-700 p-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs uppercase tracking-wider text-chalk-400">Listone</p>
+              {auction.player_list ? (
+                <p className="truncate font-medium text-chalk-50">
+                  {auction.player_list.name}
+                  <span className="ml-2 text-sm font-normal text-chalk-400">
+                    {auction.player_list.player_count} giocatori
+                  </span>
+                </p>
+              ) : (
+                <p className="text-sm text-gold-400">
+                  Non ancora caricato: serve per iniziare.
+                </p>
+              )}
+            </div>
+            <Link href={`/a/${auction.code}/listone`}>
+              <Button size="sm" variant={auction.player_list ? "ghost" : "gold"}>
+                {auction.player_list ? "Cambia" : "Carica il listone"}
+              </Button>
+            </Link>
+            {auction.player_list && (
+              <Link href={`/a/${auction.code}/giocatori`}>
+                <Button size="sm" variant="ghost">
+                  Sfoglia
+                </Button>
+              </Link>
+            )}
+          </div>
 
           <Button
             size="lg"
